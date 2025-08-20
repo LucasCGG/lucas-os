@@ -1,10 +1,12 @@
-import { Desktop } from "./components"
-import { AboutApp } from "./apps/AboutApp";
+import { AppCustomWaitCursor, Desktop } from './components';
 
 export default function App() {
   return (
-    <div className="w-screen h-screen overflow-hidden">
-      <Desktop />
-    </div>
+    <>
+      <AppCustomWaitCursor />
+      <div className="h-screen w-screen overflow-hidden">
+        <Desktop />
+      </div>
+    </>
   );
 }

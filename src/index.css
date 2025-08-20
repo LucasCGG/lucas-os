@@ -1,3 +1,145 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@font-face {
+  font-family: 'Chunky Beard';
+  src: url('./assets/fonts/ChunkyBeard/ChunkyBeard-Regular.otf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@layer base {
+  html,
+  body,
+  #root,
+  * {
+    @apply font-retro;
+    @apply cursor-arrow;
+  }
+
+  :is(a, button, [role='button'], .clickable, .btn-retro, .btn-retro-icon) {
+    @apply cursor-hand;
+  }
+
+  :is(input[type='text'], textarea, [contenteditable='true']) {
+    @apply cursor-text;
+  }
+
+  body[data-busy='true'] {
+    cursor: none !important;
+  }
+
+  body[data-busy='true'] * {
+    cursor: inherit !important;
+  }
+
+  :is(.download-zone, .download-button:hover) {
+    @apply cursor-download;
+  }
+
+  :is(.window-title, .draggable) {
+    @apply cursor-move;
+  }
+}
+
+@layer utilities {
+  .cursor-ew-imp {
+    cursor:
+      url('/assets/cursors/resize-ew.png') 12 12,
+      ew-resize !important;
+  }
+  .cursor-ns-imp {
+    cursor:
+      url('/assets/cursors/resize-ns.png') 12 12,
+      ns-resize !important;
+  }
+  .cursor-nwse-imp {
+    cursor:
+      url('/assets/cursors/resize-nswe.png') 12 12,
+      nwse-resize !important;
+  }
+  .cursor-nesw-imp {
+    cursor:
+      url('/assets/cursors/resize-nesw.png') 12 12,
+      nesw-resize !important;
+  }
+}
+
+.rnd-handle-e,
+.rnd-handle-w {
+  cursor:
+    url('/assets/cursors/resize-ew.png') 12 12,
+    ew-resize !important;
+}
+.rnd-handle-n,
+.rnd-handle-s {
+  cursor:
+    url('/assets/cursors/resize-ns.png') 12 12,
+    ns-resize !important;
+}
+.rnd-handle-se,
+.rnd-handle-nw {
+  cursor:
+    url('/assets/cursors/resize-nswe.png') 12 12,
+    nwse-resize !important;
+}
+.rnd-handle-sw,
+.rnd-handle-ne {
+  cursor:
+    url('/assets/cursors/resize-nesw.png') 12 12,
+    nesw-resize !important;
+}
+
+/* ── Components (merged into a single block) ────────────────────────── */
+@layer components {
+  .retro-3d {
+    @apply border bg-gray-200 text-black shadow-inner transition-transform;
+    @apply border-b-gray-600 border-l-white border-r-gray-600 border-t-white;
+  }
+  .retro-3d:active {
+    @apply translate-x-[1px] translate-y-[1px];
+    @apply border-b-white border-l-gray-600 border-r-white border-t-gray-600;
+  }
+
+  .retro-hover {
+    @apply transition-all duration-150 ease-out hover:scale-[1.03] hover:shadow-md hover:brightness-110;
+  }
+
+  .btn-press:active {
+    @apply translate-x-[1px] translate-y-[1px];
+  }
+
+  .btn-retro {
+    @apply retro-3d btn-press retro-hover inline-flex items-center justify-center gap-2 px-3 py-1 text-sm font-semibold;
+  }
+  .btn-retro-icon {
+    @apply btn-press retro-hover inline-flex h-auto w-auto items-center justify-center p-1;
+  }
+
+  .retro-window {
+    @apply relative p-1;
+    background: #cfc8b8;
+    box-shadow: inset -1px -1px 0 rgba(0, 0, 0, 0.3);
+  }
+  .retro-window::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-top: 4px solid #fff;
+    border-left: 4px solid #fff;
+    border-right: 4px solid #5a5a5a;
+    border-bottom: 4px solid #5a5a5a;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 5;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+  .retro-window-focused::before {
+    border-right-color: #404040;
+    border-bottom-color: #404040;
+    box-shadow: 0 0 0 2px #7e57c2;
+  }
+}
