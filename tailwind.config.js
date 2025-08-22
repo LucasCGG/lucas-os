@@ -34,7 +34,7 @@ module.exports = {
         accent_blue: '#A1B094',
         accent_orange: '#ED9965',
         accent_yellow: '#F3CD8D',
-        bg_green: '#89a286',
+        bg_green: '#90a88d',
         border: '#5D341A',
         border_fg: '#353425',
         background: '#F7E5C4',

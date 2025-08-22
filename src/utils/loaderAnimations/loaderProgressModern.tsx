@@ -1,0 +1,18 @@
+export const loaderProgressModern = [
+  "LucasOS Terminal v1.0.0",
+  "",
+  "Initializing hyperdrive...",
+  "[■□□□□□□□□□] 5%  - Warming up flux capacitors",
+  "[■■□□□□□□□□] 12% - Calibrating interweb frequencies ",
+  "[■■■□□□□□□□] 18% - Summoning the JavaScript spirits",
+  "[■■■■■□□□□□] 33% - Downloading extra RAM (definitely works)",
+  "[■■■■■■□□□□] 47% - Negotiating with APIs",
+  "[■■■■■■□□□□] 48% - Procrastinating ",
+  "[■■■■■■■□□□] 55% - Sipping coffee... please wait",
+  "[■■■■■■■■■□] 79% - Dealing with the Devil",
+  "[■■■■■■■■■■] 94% - Teaching AI to behave nicely",
+  "[■■■■■■■■■■] 99% - Finalizing super-secret features",
+  "[■■■■■■■■■■] 100% - Boot complete. Welcome, Commander.",
+  "",
+  "Type 'help' to list commands.",
+];

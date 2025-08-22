@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
-type TItem = { year: string; title: string; sub?: string };
+type TItem = { year: string; title: string; sub?: string | any };
 
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T | null>(null);
@@ -62,21 +62,33 @@ export function Timeline({
   return (
     <div ref={ref} className="mt-8">
       <ol className="relative py-1">
-        <span className="pointer-events-none absolute bottom-0 left-[14px] top-0 w-[3px] -translate-x-1/2 bg-accent_orange/80" />
+        <span className="pointer-events-none absolute bottom-0 left-1/2 top-0 w-[3px] -translate-x-1/2 bg-accent_orange/80" />
 
-        {items.map((t) => (
-          <li key={t.year} className="grid grid-cols-[28px_1fr] items-start gap-3 py-5">
-            <div className="flex justify-center">
-              <span className="relative top-1 h-4 w-4 rounded-full border-2 border-border bg-background" />
-            </div>
+        {items.map((t, i) => {
+          const onLeft = i % 2 === 0;
 
-            <div className="text-sm leading-6 text-text-muted">
+          const Content = (
+            <div
+              className={`text-sm leading-6 text-text-muted ${onLeft ? "text-right" : "text-left"}`}
+            >
               <div className="font-semibold">{t.year}</div>
               <div className="mt-1 font-semibold">{t.title}</div>
               {t.sub ? <div className="mt-1 opacity-80">{t.sub}</div> : null}
             </div>
-          </li>
-        ))}
+          );
+
+          return (
+            <li key={t.year} className="grid grid-cols-[1fr_28px_1fr] items-start gap-3 py-5">
+              {onLeft ? Content : <div />}
+
+              <div className="flex justify-center">
+                <span className="relative top-1 h-4 w-4 rounded-full border-2 border-border bg-background" />
+              </div>
+
+              {!onLeft ? Content : <div />}
+            </li>
+          );
+        })}
       </ol>
     </div>
   );

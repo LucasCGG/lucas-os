@@ -48,6 +48,13 @@ export const buttonSizeMap = {
     px: 'px-6',
     py: 'py-3.5',
   },
+  full: {
+    icon: 'full',
+    text: 'text-2xl',
+    gap: 'gap-3.5',
+    px: 'px-6',
+    py: 'py-3.5',
+  },
 } as const;
 
 export type ButtonSize = keyof typeof buttonSizeMap;

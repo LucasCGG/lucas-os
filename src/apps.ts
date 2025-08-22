@@ -1,4 +1,5 @@
 import { AboutApp } from './apps/AboutApp';
+import { Console } from './apps/Console';
 
 export const appsRegistry = {
   about: {
@@ -6,7 +7,19 @@ export const appsRegistry = {
     title: 'About Me',
     component: AboutApp,
     icon: 'icn-about-app',
-    defaultSize: { width: 400, height: 300 },
+    defaultSize: { width: 1000, height: 650 },
+    pinned: true,
+  },
+
+  console: {
+    id: 'console',
+    title: 'Console',
+    component: Console,
+    icon: 'icn-console-app',
+    defaultSize: { width: 500, height: 400 },
+    startPosition: { x: 100, y: 100 },
     pinned: true,
   },
 };
+
+

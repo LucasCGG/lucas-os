@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { appsRegistry } from '../../apps';
 import { useWindowStore } from '../../store';
 import { Window } from '../Window/Window';
@@ -35,13 +35,9 @@ export const WindowManager = () => {
     return () => ro.disconnect();
   }, [updateWindow]);
 
-  return (
-    <div
-      ref={containerRef}
-      id="window-positioner"
-      className="relative h-full flex-1 overflow-hidden"
-    >
-      {openWindows
+  const renderOpenWindow = useMemo(
+    () =>
+      openWindows
         .filter((w) => !w.isMinimized)
         .map(({ id, zIndex }) => {
           const app = appsRegistry[id];
@@ -60,7 +56,17 @@ export const WindowManager = () => {
               <AppComponent />
             </Window>
           );
-        })}
+        }),
+    [openWindows]
+  );
+
+  return (
+    <div
+      ref={containerRef}
+      id="window-positioner"
+      className="relative h-full flex-1 overflow-hidden"
+    >
+      {renderOpenWindow}
     </div>
   );
 };

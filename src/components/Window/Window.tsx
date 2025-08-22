@@ -2,6 +2,7 @@ import { Rnd } from 'react-rnd';
 import { useWindowStore } from '../../store';
 import { AppTruncatingTooltipText } from '../AppTruncatingTooltipText/AppTruncatingTooltipText';
 import { AppIconButton } from '../AppIconButton';
+import { useMemo } from 'react';
 
 interface WindowProps {
   appId: string;
@@ -53,7 +54,7 @@ export const Window = ({
       bounds="#window-positioner"
       style={{ zIndex }}
       onMouseDown={onFocus}
-      className="retro-window absolute overflow-hidden rounded-xl border-accent_blue bg-neutral-800 shadow-md"
+      className="retro-window absolute overflow-hidden rounded-xl border-accent_blue bg-transparent shadow-md backdrop-blur-xl"
       dragHandleClassName="window-titlebar"
       resizeHandleClasses={{
         right: 'cursor-ew-imp',
@@ -66,18 +67,23 @@ export const Window = ({
         topRight: 'cursor-nesw-imp',
       }}
     >
-      <div className="window-titlebar text-md flex cursor-move items-center justify-between bg-sidebar px-3 py-2 font-medium text-text-muted">
-        <AppTruncatingTooltipText as="p">{title}</AppTruncatingTooltipText>
-        <div className="flex gap-2">
-          <AppIconButton size="sm" icon="icn-minimize" onClick={() => minimizeApp(appId)} />
-          <AppIconButton
-            size="sm"
-            icon="icn-fullscreen"
-            onClick={() => toggleFullscreenApp(appId)}
-          />
-          <AppIconButton size="sm" icon="icn-close" onClick={onClose} />
-        </div>
-      </div>
+      {useMemo(
+        () => (
+          <div className="window-titlebar text-md flex cursor-move items-center justify-between bg-sidebar px-3 py-2 font-medium text-text-muted">
+            <AppTruncatingTooltipText as="p">{title}</AppTruncatingTooltipText>
+            <div className="flex gap-2">
+              <AppIconButton size="sm" icon="icn-minimize" onClick={() => minimizeApp(appId)} />
+              <AppIconButton
+                size="sm"
+                icon="icn-fullscreen"
+                onClick={() => toggleFullscreenApp(appId)}
+              />
+              <AppIconButton size="sm" icon="icn-close" onClick={onClose} />
+            </div>
+          </div>
+        ),
+        [appId]
+      )}
       <div className="h-full">{children}</div>
     </Rnd>
   );

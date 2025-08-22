@@ -1,1 +1,2 @@
-export * from "./AboutApp";
+export * from './AboutApp';
+export * from './Console';
