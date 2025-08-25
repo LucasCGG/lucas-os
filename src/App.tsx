@@ -30,7 +30,7 @@ export const App = () => {
     }, [showStarter, hasVisited]);
 
     if (showMessage) {
-        return 
+        return (
             <div
                 style={{ height: "100vh", width: "100vw" }}
                 className="flex flex-col items-center justify-center bg-terminal_background"
