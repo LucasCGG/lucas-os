@@ -21,16 +21,16 @@ export const App = () => {
     }, [hasVisited]);
 
     useEffect(() => {
-        if (showStarter) {
+        if (hasVisited && showStarter) {
             const timer = setTimeout(() => {
                 setShowStart(false);
             }, 1500);
             return () => clearTimeout(timer);
         }
-    }, [showStarter]);
+    }, [showStarter, hasVisited]);
 
     if (showMessage) {
-        return (
+        return 
             <div
                 style={{ height: "100vh", width: "100vw" }}
                 className="flex flex-col items-center justify-center bg-terminal_background"
