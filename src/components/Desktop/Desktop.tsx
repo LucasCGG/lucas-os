@@ -1,3 +1,4 @@
+// Desktop.tsx
 import { Dock } from "../Dock";
 import { WindowManager } from "../WindowManager";
 import BackgroundImage from "../../assets/BackgroundImage.png";
@@ -19,6 +20,8 @@ export const Desktop = () => {
                     backgroundPosition: "center",
                 }}
             >
+                {/* FX overlay for ghost animations */}
+                <div id="fx-layer" className="pointer-events-none absolute inset-0 z-[99999]" />
                 <WindowManager />
             </div>
         </div>

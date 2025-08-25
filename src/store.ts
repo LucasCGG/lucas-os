@@ -1,5 +1,8 @@
+// store.ts
 import { create } from "zustand";
 import { appsRegistry } from "./apps";
+
+export type Rect = { x: number; y: number; width: number; height: number };
 
 type WindowData = {
     id: string;
@@ -8,20 +11,27 @@ type WindowData = {
     size: { width: number; height: number };
     isMinimized?: boolean;
     isFullscreen?: boolean;
+
+    // --- NEW: animation state ---
+    isLaunching?: boolean; // currently doing open animation
+    isAnimating?: boolean; // any active window animation (open/minimize/etc)
+    launchFrom?: Rect | null; // source rect (icon) in desktop coords
+    minimizeTo?: Rect | null; // optional: for future minimize-to-icon
 };
 
 type Store = {
     openWindows: WindowData[];
     highestZIndex: number;
-    openApp: (id: string) => void;
-    updateWindow: (id, data) => void;
+
+    openApp: (id: string, opts?: { sourceRect?: Rect | null }) => void;
+    updateWindow: (id: string, data: Partial<WindowData>) => void;
     closeApp: (id: string) => void;
     bringToFront: (id: string) => void;
     minimizeApp: (id: string) => void;
     toggleFullscreenApp: (id: string) => void;
 };
 
-const MARGIN = 100;
+const MARGIN = 150;
 
 function getRandomPosition(size = { width: 500, height: 400 }) {
     const maxX = window.innerWidth - size.width - 100;
@@ -43,25 +53,27 @@ function fitSizeToViewport(size: { width: number; height: number }) {
     };
 }
 
-export const useWindowStore = create<Store>((set) => ({
+export const useWindowStore = create<Store>((set, get) => ({
     openWindows: [
         {
-            // id: "console",
             id: "mail",
             zIndex: 0,
             position: { x: 100, y: 100 },
             size: { width: 1000, height: 650 },
             isMinimized: false,
             isFullscreen: false,
+            isLaunching: false,
+            isAnimating: false,
+            launchFrom: null,
+            minimizeTo: null,
         },
     ],
     highestZIndex: 0,
 
-    openApp: (id) =>
+    openApp: (id, opts) =>
         set((state) => {
             const existingWindow = state.openWindows.find((w) => w.id === id);
             const app = appsRegistry[id];
-
             if (!app) return state;
 
             const size = fitSizeToViewport(app.defaultSize);
@@ -71,7 +83,16 @@ export const useWindowStore = create<Store>((set) => ({
             if (existingWindow) {
                 return {
                     openWindows: state.openWindows.map((w) =>
-                        w.id === id ? { ...w, isMinimized: false, zIndex: nextZ } : w
+                        w.id === id
+                            ? {
+                                  ...w,
+                                  isMinimized: false,
+                                  zIndex: nextZ,
+                                  isLaunching: false,
+                                  isAnimating: false,
+                                  launchFrom: opts?.sourceRect ?? w.launchFrom ?? null,
+                              }
+                            : w
                     ),
                     highestZIndex: nextZ,
                 };
@@ -87,6 +108,10 @@ export const useWindowStore = create<Store>((set) => ({
                         size,
                         isMinimized: false,
                         isFullscreen: false,
+                        isLaunching: !!opts?.sourceRect,
+                        isAnimating: !!opts?.sourceRect,
+                        launchFrom: opts?.sourceRect ?? null,
+                        minimizeTo: null,
                     },
                 ],
                 highestZIndex: nextZ,
@@ -114,20 +139,17 @@ export const useWindowStore = create<Store>((set) => ({
             openWindows: state.openWindows.filter((w) => w.id !== id),
         })),
 
-    bringToFront: (id) =>
-        set((state) => {
-            const current = state.openWindows.find((w) => w.id === id);
-            if (!current) return state;
+    bringToFront: (id) => {
+        const { openWindows, highestZIndex } = get();
+        const current = openWindows.find((w) => w.id === id);
+        if (!current) return;
 
-            const nextZ = state.highestZIndex + 1;
-
-            return {
-                openWindows: state.openWindows.map((w) =>
-                    w.id === id ? { ...w, zIndex: nextZ } : w
-                ),
-                highestZIndex: nextZ,
-            };
-        }),
+        const nextZ = highestZIndex + 1;
+        set({
+            openWindows: openWindows.map((w) => (w.id === id ? { ...w, zIndex: nextZ } : w)),
+            highestZIndex: nextZ,
+        });
+    },
 
     minimizeApp: (id) =>
         set((state) => ({

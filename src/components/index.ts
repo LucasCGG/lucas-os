@@ -8,3 +8,4 @@ export * from './Dock';
 export * from './Window';
 export * from './WindowManager';
 export * from './AppTimeLine';
+export * from "./RetroStartup";

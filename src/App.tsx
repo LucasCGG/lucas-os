@@ -1,4 +1,5 @@
 import { AppCustomWaitCursor, Desktop } from "./components";
+import { RetroStart } from "./components/RetroStartup/RetroStartup";
 import useDynamicTabTitle from "./utils/useDynamicTitle";
 import { useEffect, useState } from "react";
 
@@ -7,6 +8,7 @@ export const App = () => {
 
     const hasVisited = localStorage.getItem("lucasOS_hasVisited");
     const [showMessage, setShowMessage] = useState(!hasVisited);
+    const [showStarter, setShowStart] = useState(true);
 
     useEffect(() => {
         if (!hasVisited) {
@@ -18,18 +20,31 @@ export const App = () => {
         }
     }, [hasVisited]);
 
+    useEffect(() => {
+        if (showStarter) {
+            const timer = setTimeout(() => {
+                setShowStart(false);
+            }, 1500);
+            return () => clearTimeout(timer);
+        }
+    }, [showStarter]);
+
     if (showMessage) {
         return (
             <div
                 style={{ height: "100vh", width: "100vw" }}
-                className="bg-terminal_background flex flex-col items-center justify-center"
+                className="flex flex-col items-center justify-center bg-terminal_background"
             >
-                <h3 className="text-terminal_foreground w-fit">
+                <h3 className="w-fit text-terminal_foreground">
                     For the currently best Experience, please use a Desktop
                 </h3>
-                <p className="text-terminal_foreground w-fit"> Enjoy ;P</p>
+                <p className="w-fit text-terminal_foreground"> Enjoy ;P</p>
             </div>
         );
+    }
+
+    if (showStarter) {
+        return <RetroStart />;
     }
 
     return (
