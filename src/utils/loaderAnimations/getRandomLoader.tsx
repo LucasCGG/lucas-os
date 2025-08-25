@@ -1,11 +1,11 @@
-import { loaderProgressModern } from "./loaderProgressModern";
+// import { loaderProgressModern } from "./loaderProgressModern";
 import { loaderRetroSplash } from "./loaderRetroSplash";
 import { loaderStylized } from "./loaderStylized";
 
 type Frames = string[] | Iterable<string> | AsyncIterable<string>;
 type Loader = Frames | (() => Frames | Promise<Frames>);
 
-const loaders: Loader[] = [loaderProgressModern, loaderRetroSplash, loaderStylized];
+const loaders: Loader[] = [loaderRetroSplash, loaderStylized];
 
 export const getRandomLoader = (): Loader => loaders[Math.floor(Math.random() * loaders.length)];
 

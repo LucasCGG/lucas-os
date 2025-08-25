@@ -73,7 +73,7 @@ const timeline = [
 
 export const AboutApp: React.FC = () => {
   return (
-    <div className="h-full min-h-0 w-full overflow-auto bg-bg_green p-4 pb-[60px] text-text-dark">
+    <div className="h-full min-h-0 w-full overflow-auto bg-bg_green p-4 pb-16 text-text-dark">
       <div className="max-w-[1200px]">
         <div className="flex flex-wrap items-start justify-center gap-8 [container-type:inline-size] [@container(min-width:665px)]:justify-start">
           {/* Avatar + Skills */}

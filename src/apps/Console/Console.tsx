@@ -302,7 +302,7 @@ export const Console: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className="flex h-full min-h-0 w-full overflow-hidden bg-black pb-[60px] text-text-light"
+      className="flex h-full min-h-0 w-full overflow-hidden bg-black pb-16 text-text-light"
     >
       <div ref={ref} className="min-h-0 min-w-0 flex-1 pl-4 pt-4" />
     </div>

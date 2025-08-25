@@ -30,6 +30,8 @@ module.exports = {
         crisis: ['"Climate Crisis"', 'sans-serif'],
       },
       colors: {
+        terminal_background: "#000000",
+        terminal_foreground: "#00FF00",
         primary: '#5D341A',
         accent_blue: '#A1B094',
         accent_orange: '#ED9965',
