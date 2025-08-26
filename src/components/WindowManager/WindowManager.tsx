@@ -1,4 +1,3 @@
-// WindowManager.tsx
 import React, { FC, useEffect, useMemo, useRef } from "react";
 import ReactDOM from "react-dom";
 import gsap from "gsap";
