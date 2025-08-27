@@ -1,4 +1,6 @@
 export const WallyCartDataDeletion = () => {
+    const effectiveDate = "2025-08-27";
+
     return (
         <main
             style={{
@@ -14,6 +16,9 @@ export const WallyCartDataDeletion = () => {
                 <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
                     WallyCart – User Data Deletion
                 </h1>
+                <p style={{ color: "#555" }}>
+                    <strong>Effective Date:</strong> {effectiveDate}
+                </p>
                 <p style={{ color: "#555" }}>
                     Instructions to permanently delete your data from WallyCart.
                 </p>
