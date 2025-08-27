@@ -1,7 +1,7 @@
 import { lazy } from "react";
 import type { ReactElement } from "react";
-
-const Portfolio = lazy(() => import("./pages/Portfolio").then((m) => ({ default: m.Portfolio })));
+import { Portfolio } from "./pages";
+import { WallyCartDataDeletion, WallyCartPrivacyPolicy } from "./pages/WallyCart";
 // const DataDeletion = lazy(() => import("./pages/DataDeletion"));
 
 export type PageRoute = {
@@ -11,8 +11,6 @@ export type PageRoute = {
 
 export const pageRoutes: PageRoute[] = [
     { path: "/", element: <Portfolio /> },
-
-    // { path: "/privacy-policy", element: <PrivacyPolicy /> },
-    // { path: "/data-deletion", element: <DataDeletion /> },
-
+    { path: "/WallyCart/privacy-policy", element: <WallyCartPrivacyPolicy /> },
+    { path: "/WallyCart/data-deletion", element: <WallyCartDataDeletion /> },
 ];
