@@ -15,6 +15,11 @@
     #root,
     * {
         @apply font-retro;
+    }
+
+    html,
+    body,
+    div {
         @apply cursor-arrow;
     }
 
@@ -99,6 +104,9 @@
     .retro-3d {
         @apply border bg-gray-200 text-black shadow-inner transition-transform;
         @apply border-b-gray-600 border-l-white border-r-gray-600 border-t-white;
+    }
+    .retro-3d svg {
+        @apply cursor-hand !important;
     }
     .retro-3d:active {
         @apply translate-x-[1px] translate-y-[1px];

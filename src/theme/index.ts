@@ -1,2 +1,2 @@
-export * from "./ButtonType";
-export * from "./IconType";
+export * from "./IconSize";
+export * from "./Button";

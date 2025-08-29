@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { AppIcon, AppIconButton } from "../../components";
+import { useCallback, useEffect, useEffect, useRef, useState } from "react";
+import { AppButton, AppIcon, AppIconButton, Email } from "../../components";
+import { Resend } from "resend";
 
 type mailItem = {
     sender: string;
@@ -27,28 +28,81 @@ const MailItem = ({ sender, subject, text, onClick, className }: mailItem) => {
     );
 };
 
-const MailEntity = ({ sender, subject, text }: mailEntity) => {
+const MailObject = ({ sender, subject, text }: mailEntity) => {
+    const [value, setValue] = useState<string>(text || "");
+    const refTextArea = useRef<HTMLTextAreaElement | null>(null);
+
+    useEffect(() => {
+        setValue(text || "");
+    }, [text]);
+
+    const resizeTextArea = () => {
+        const el = refTextArea.current;
+        if (!el) return;
+
+        el.style.height = "auto";
+
+        const parent = el.parentElement;
+        const max = parent ? parent.clientHeight : Infinity;
+
+        const next = Math.min(el.scrollHeight, max);
+        el.style.height = `${next}px`;
+
+        el.style.overflowY = el.scrollHeight > max ? "auto" : "hidden";
+    };
+
+    useEffect(resizeTextArea, [value]);
+
+    const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setValue(e.target.value);
+    };
+
+    const resend = new Resend("re_124123124");
+
+    const sendMail = () => {
+        console.debug("Test");
+        resend.emails.send({
+            from: "colaco.lucasgabriel@gmail.com",
+            to: "colaco.lucasgabriel@gmail.com",
+            subject: "Test Sending mail",
+            react: <Email url="lucascolaco.com" />,
+        });
+    };
+
     return (
-        <div className="h-full w-full px-2 py-4">
-            <div className="border-b-2 border-sidebar pb-2">
+        <div className="flex h-full min-h-0 w-full flex-col px-2 py-4">
+            <div className="shrink-0 border-b-2 border-sidebar pb-2">
                 <div className="flex gap-1">
                     <p className="font-semibold">To:</p>
                     <p>colaco.lucasgabriel@gmail.com</p>
                 </div>
                 <div className="flex gap-1">
                     <p className="font-semibold">From:</p>
-                    {/*TODO: make this an Editable field */}
                     {sender ? sender : <p>Enter your Email</p>}
                 </div>
                 <div className="flex gap-1">
                     <p className="font-semibold">Subject: </p>
-
                     {subject ? subject : <p>Enter the Subject</p>}
                 </div>
             </div>
-            <div className="py-2">
-                {/*TODO: make this an Editable field */}
-                <p> Type your message in here :D</p>
+
+            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden py-2">
+                <textarea
+                    ref={refTextArea}
+                    className="box-border h-auto w-full resize-none border-none bg-inherit outline-none"
+                    rows={1}
+                    placeholder="Type your Message in here :D"
+                    onChange={onChange}
+                    value={value}
+                    style={{ maxHeight: "100%" }}
+                />
+
+                {!sender && !subject && (
+                    <div className="flex flex-row gap-2">
+                        <AppButton onClick={() => sendMail()} text="Save to Draft" />
+                        <AppButton onClick={() => {}} text="Send" />
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -72,14 +126,30 @@ const initialMailList: mailItem[] = [
     },
 ];
 
+const newMailKey = "compose-mail";
+
 export const MailApp = () => {
     const [openMail, setOpenMail] = useState<string | null>(null);
+
+    const renderOpenMail = useCallback((mail?: mailItem) => {
+        return (
+            <div className="min-w-80 flex-shrink-0 flex-grow overflow-y-auto p-4">
+                <MailObject sender={mail?.sender} subject={mail?.subject} text={mail?.text} />
+            </div>
+        );
+    }, []);
 
     return (
         <div className="flex h-full w-full flex-col gap-0 bg-[#F5E4C0] px-4 pb-16">
             <div className="flex justify-between border-b-2 border-sidebar py-2">
                 <div className="flex gap-4">
-                    <AppIcon icon="icn-envelope" className="text-sidebar" />
+                    <AppIconButton
+                        icon="icn-envelope"
+                        variant="ghost"
+                        size="md"
+                        className="cursor-hand text-sidebar"
+                        onClick={() => setOpenMail(newMailKey)}
+                    />
                     <AppIcon icon="icn-pen" className="text-sidebar" />
                     <AppIcon icon="icn-trash-bin" className="text-sidebar" />
                 </div>
@@ -107,16 +177,15 @@ export const MailApp = () => {
 
                 {openMail &&
                     (() => {
+                        const newMail = openMail === newMailKey;
+                        if (newMail) {
+                            return renderOpenMail();
+                        }
                         const mail = initialMailList.find((m) => m.sender + m.subject === openMail);
-                        return mail ? (
-                            <div className="min-w-80 flex-shrink-0 flex-grow overflow-y-auto p-4">
-                                <MailEntity
-                                    sender={mail.sender}
-                                    subject={mail.subject}
-                                    text={mail.text}
-                                />
-                            </div>
-                        ) : null;
+                        if (mail) {
+                            return renderOpenMail(mail);
+                        }
+                        return;
                     })()}
             </div>
         </div>

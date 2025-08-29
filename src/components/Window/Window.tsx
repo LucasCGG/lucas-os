@@ -98,7 +98,7 @@ export const Window = ({
                 ),
                 [appId, title, minimizeApp, toggleFullscreenApp, onClose]
             )}
-            <div className="h-full">{children}</div>
+            <div className="flex h-full min-h-0 flex-col overflow-hidden">{children}</div>{" "}
         </Rnd>
     );
 };

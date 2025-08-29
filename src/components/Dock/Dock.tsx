@@ -28,7 +28,7 @@ const DockClock = () => {
     const { hours, minutes } = useMemo(() => {
         return {
             hours: now.toLocaleString([], { hour: "2-digit", hour12: false }),
-            minutes: now.toLocaleString([], { minute: "2-digit" }),
+            minutes: now.getMinutes().toString().padStart(2, "0"),
         };
     }, [now]);
 
@@ -87,8 +87,8 @@ export const Dock = () => {
                                 onClick={() => openFromIcon(app.id)}
                                 icon={app.icon}
                                 size="full"
-                                withBackground={false}
                                 className="aspect-square w-full overflow-hidden p-0"
+                                variant="ghost"
                             />
                         </div>
                     ))}
