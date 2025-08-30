@@ -1,4 +1,3 @@
-// store.ts
 import { create } from "zustand";
 import { appsRegistry } from "./apps";
 
@@ -12,11 +11,10 @@ type WindowData = {
     isMinimized?: boolean;
     isFullscreen?: boolean;
 
-    // --- NEW: animation state ---
-    isLaunching?: boolean; // currently doing open animation
-    isAnimating?: boolean; // any active window animation (open/minimize/etc)
-    launchFrom?: Rect | null; // source rect (icon) in desktop coords
-    minimizeTo?: Rect | null; // optional: for future minimize-to-icon
+    isLaunching?: boolean;
+    isAnimating?: boolean;
+    launchFrom?: Rect | null;
+    minimizeTo?: Rect | null;
 };
 
 type Store = {
@@ -56,7 +54,7 @@ function fitSizeToViewport(size: { width: number; height: number }) {
 export const useWindowStore = create<Store>((set, get) => ({
     openWindows: [
         {
-            id: "mail",
+            id: "pdfviewer",
             zIndex: 0,
             position: { x: 100, y: 100 },
             size: { width: 1000, height: 650 },

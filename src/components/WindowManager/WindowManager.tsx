@@ -120,7 +120,7 @@ export const WindowManager = () => {
             const { openWindows: windows } = useWindowStore.getState();
 
             windows.forEach((w) => {
-                if (w.isAnimating) return; // <-- important guard
+                if (w.isAnimating) return;
                 const newX = Math.max(0, Math.min(w.position.x, width - w.size.width));
                 const newY = Math.max(0, Math.min(w.position.y, height - w.size.height));
                 const newWidth = Math.min(w.size.width, width);

@@ -1,6 +1,8 @@
 import { AboutApp } from "./apps/AboutApp";
+import { Browser } from "./apps/Browser";
 import { Console } from "./apps/Console";
 import { MailApp } from "./apps/MailApp";
+import { PdfViewer } from "./apps/PdfViewer";
 
 export const appsRegistry = {
     console: {
@@ -25,6 +27,22 @@ export const appsRegistry = {
         title: "Email",
         component: MailApp,
         icon: "icn-mail-app",
+        defaultSize: { width: 700, height: 500 },
+        pinned: true,
+    },
+    browser: {
+        id: "browser",
+        title: "Browser",
+        component: Browser,
+        icon: "", // TODO: Implement "Browser Icon"
+        defaultSize: { width: 700, height: 500 },
+        pinned: true,
+    },
+    pdfviewer: {
+        id: "pdfviewer",
+        title: "Pdf Viewer",
+        component: PdfViewer,
+        icon: "", // TODO: Implement "Browser Icon"
         defaultSize: { width: 700, height: 500 },
         pinned: true,
     },

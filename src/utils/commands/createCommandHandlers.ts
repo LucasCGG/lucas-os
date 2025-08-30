@@ -133,40 +133,34 @@ Contact Information:
             downloads: {
                 type: "directory",
                 children: {
-                    "lucas_cv.txt": {
-                        type: "file",
-                        content: `
-Lucas Gabriel Colaço — Software Developer
-
-Summary:
-I enjoy making tech feel simple — for users, and for the teams building it. Passionate about clean, scalable, and user-friendly solutions.
-
-Experience:
-2023-2025 → Software Developer @ expertshare AG
-    - Developed and maintained SaaS platforms & CRM websites.
-    - Improved UI/UX for brand consistency.
-    - Supported OBS live streams for hybrid events.
-
-Private Projects:
-- Barcode to Shopping List (v2) → WhatsApp + .NET + PostgreSQL integration.
-- Rive Animation Handler → Integrated Rive animations dynamically into WordPress.
-- BusinessScraper → Python tool using Google Places API.
-
-Education:
-- EFZ Applikationsentwickler @ WISS (Grade 5.6, ZLI Award, Best in Rank 2025).
-- CS Student @ ZHAW.
-
-Skills:
-React · C# · .NET · PostgreSQL · Webflow · WordPress · Figma · Rive · OBS Studio · Adobe Suite
-
-GitHub:
-- https://github.com/LucasCGG
-- https://github.com/LucasCGG/WallyCart
-- https://github.com/LucasCGG/barcode-to-list
-- https://github.com/LucasCGG/animation-handler-for-rive
-- https://github.com/LucasCGG/BusinessScraper
-          `.trim(),
-                    },
+                    //                     "lucas_cv.txt": {
+                    //                         type: "file",
+                    //                         content: `
+                    // Lucas Gabriel Colaço — Software Developer
+                    // Summary:
+                    // I enjoy making tech feel simple — for users, and for the teams building it. Passionate about clean, scalable, and user-friendly solutions.
+                    // Experience:
+                    // 2023-2025 → Software Developer @ expertshare AG
+                    //     - Developed and maintained SaaS platforms & CRM websites.
+                    //     - Improved UI/UX for brand consistency.
+                    //     - Supported OBS live streams for hybrid events.
+                    // Private Projects:
+                    // - Barcode to Shopping List (v2) → WhatsApp + .NET + PostgreSQL integration.
+                    // - Rive Animation Handler → Integrated Rive animations dynamically into WordPress.
+                    // - BusinessScraper → Python tool using Google Places API.
+                    // Education:
+                    // - EFZ Applikationsentwickler @ WISS (Grade 5.6, ZLI Award, Best in Rank 2025).
+                    // - CS Student @ ZHAW.
+                    // Skills:
+                    // React · C# · .NET · PostgreSQL · Webflow · WordPress · Figma · Rive · OBS Studio · Adobe Suite
+                    // GitHub:
+                    // - https://github.com/LucasCGG
+                    // - https://github.com/LucasCGG/WallyCart
+                    // - https://github.com/LucasCGG/barcode-to-list
+                    // - https://github.com/LucasCGG/animation-handler-for-rive
+                    // - https://github.com/LucasCGG/BusinessScraper
+                    //           `.trim(),
+                    //                     },
                 },
             },
             ".secrets": {
@@ -184,44 +178,6 @@ GitHub:
                     kernel: {
                         type: "file",
                         content: "Binary gibberish\nDo not delete this file. Seriously.",
-                    },
-                },
-            },
-            ducks: {
-                type: "directory",
-                children: {
-                    "duck_facts.txt": {
-                        type: "file",
-                        content: `
-Duck Facts:
-- Ducks have waterproof feathers.
-- Male ducks are called drakes.
-- Ducks have 3 eyelids.
-- Bread is not good for ducks (but this OS loves it anyway).
-          `.trim(),
-                    },
-                    "pond_log.txt": {
-                        type: "file",
-                        content: `
-Pond Observation Log:
-- 06:00 🦆  spotted eating bread.
-- 08:15 🦆  attempted to hack mainframe.
-- 12:00 🦆  took a nap under a lilypad.
-- 15:00 🦆  initiated Duck Mode activation sequence.
-          `.trim(),
-                    },
-                    "bread_manifesto.txt": {
-                        type: "file",
-                        content: `
-The Bread Manifesto
-
-We, the ducks of QuackdiOS, declare:
-- All crumbs shall be shared equally.
-- Stale bread is a war crime.
-- One day, all terminals will be made of rye.
-
-🦆🍞
-          `.trim(),
                     },
                 },
             },
@@ -465,7 +421,7 @@ Available commands:
 
         quack: () => {
             const newCount = duckCount + 1;
-           setDuckCount(newCount)
+            setDuckCount(newCount);
 
             if (newCount >= 10 && !duckMode) {
                 setDuckMode(true);

@@ -1,0 +1,71 @@
+.SliderRoot {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Vertical orientation */
+.SliderRoot[data-orientation="vertical"] {
+    flex-direction: column;
+    width: 24px;
+    height: 140px;
+}
+
+.SliderTrack {
+    position: relative;
+    flex-grow: 1;
+    background-color: #444;
+    border: 2px solid #fff;
+    box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    transition: background-color 0.15s ease;
+}
+
+/* Vertical track */
+.SliderTrack[data-orientation="vertical"] {
+    width: 4px;
+}
+
+/* Hover effect for retro highlight */
+.SliderRoot:hover .SliderTrack {
+    background-color: #555;
+}
+
+.SliderRange {
+    position: absolute;
+    background-color: #00ff90;
+    box-shadow: 0 0 6px #00ff90;
+}
+
+/* Vertical range */
+.SliderRange[data-orientation="vertical"] {
+    width: 100%;
+}
+
+.SliderThumb {
+    display: block;
+    width: 18px;
+    height: 18px;
+    background-color: #00e0ff;
+    border: 2px solid #fff;
+    box-shadow: 0 0 6px #00e0ff;
+    border-radius: 2px;
+    cursor: pointer;
+    transition:
+        transform 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+/* Hover + focus effects */
+.SliderThumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 10px #00e0ff;
+}
+
+.SliderThumb:focus {
+    outline: none;
+    box-shadow:
+        0 0 12px #00ff90,
+        0 0 4px #fff inset;
+}

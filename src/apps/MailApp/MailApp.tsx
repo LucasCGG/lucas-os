@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AppButton, AppIcon, AppIconButton, Email } from "../../components";
 import { Resend } from "resend";
 
