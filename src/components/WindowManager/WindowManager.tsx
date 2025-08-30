@@ -162,7 +162,7 @@ export const WindowManager = () => {
                             __animHidden={hidden}
                             __animDisabled={animating}
                         >
-                            <AppComponent />
+                            <AppComponent {...(wData.props ?? {})} />
                         </Window>
                     );
                 }),

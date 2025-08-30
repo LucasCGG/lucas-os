@@ -15,13 +15,15 @@ type WindowData = {
     isAnimating?: boolean;
     launchFrom?: Rect | null;
     minimizeTo?: Rect | null;
+
+    props?: Record<string, any>;
 };
 
 type Store = {
     openWindows: WindowData[];
     highestZIndex: number;
 
-    openApp: (id: string, opts?: { sourceRect?: Rect | null }) => void;
+    openApp: (id: string, opts?: { sourceRect?: Rect | null; props?: Record<string, any> }) => void;
     updateWindow: (id: string, data: Partial<WindowData>) => void;
     closeApp: (id: string) => void;
     bringToFront: (id: string) => void;
@@ -54,7 +56,7 @@ function fitSizeToViewport(size: { width: number; height: number }) {
 export const useWindowStore = create<Store>((set, get) => ({
     openWindows: [
         {
-            id: "pdfviewer",
+            id: "about",
             zIndex: 0,
             position: { x: 100, y: 100 },
             size: { width: 1000, height: 650 },
@@ -89,6 +91,7 @@ export const useWindowStore = create<Store>((set, get) => ({
                                   isLaunching: false,
                                   isAnimating: false,
                                   launchFrom: opts?.sourceRect ?? w.launchFrom ?? null,
+                                  props: opts?.props ?? w.props,
                               }
                             : w
                     ),
@@ -110,6 +113,7 @@ export const useWindowStore = create<Store>((set, get) => ({
                         isAnimating: !!opts?.sourceRect,
                         launchFrom: opts?.sourceRect ?? null,
                         minimizeTo: null,
+                        props: opts?.props ?? {},
                     },
                 ],
                 highestZIndex: nextZ,

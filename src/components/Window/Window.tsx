@@ -64,6 +64,7 @@ export const Window = ({
                 pointerEvents: __animDisabled ? "none" : undefined,
             }}
             onMouseDown={onFocus}
+            //TODO: Check why flex has no affect and is beeing overriten by inline styling of this library....
             className="retro-window absolute overflow-hidden rounded-xl border-accent_blue bg-transparent shadow-md backdrop-blur-xl"
             dragHandleClassName="window-titlebar"
             resizeHandleClasses={{
@@ -98,7 +99,9 @@ export const Window = ({
                 ),
                 [appId, title, minimizeApp, toggleFullscreenApp, onClose]
             )}
-            <div className="flex h-full min-h-0 flex-col overflow-hidden">{children}</div>{" "}
+            <div className="flex-shrink-1 flex h-full min-h-0 flex-col overflow-hidden">
+                {children}
+            </div>{" "}
         </Rnd>
     );
 };

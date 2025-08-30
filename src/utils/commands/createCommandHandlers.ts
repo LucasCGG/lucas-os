@@ -2,9 +2,49 @@ import { useWindowStore } from "../../store";
 
 type FileSystemNode = {
     type: "file" | "directory";
+
     content?: string;
+    src?: string;
+    mime?: string;
+
     children?: Record<string, FileSystemNode>;
+
+    hidden?: boolean;
 };
+
+function toAbsolutePath(raw: string): string[] {
+    if (!raw || raw === ".") return [...currentPath];
+    if (raw.startsWith("~/")) return ["~", ...raw.slice(2).split("/").filter(Boolean)];
+    if (raw === "~") return ["~"];
+    if (raw.startsWith("~")) return raw.split("/").filter(Boolean);
+
+    const parts = raw.split("/").filter(Boolean);
+    const next = [...currentPath];
+    for (const p of parts) {
+        if (p === "..") {
+            if (next.length > 1) next.pop();
+        } else if (p !== ".") next.push(p);
+    }
+    return next;
+}
+
+function guessMime(name: string): string {
+    const ext = name.split(".").pop()?.toLowerCase();
+    switch (ext) {
+        case "pdf":
+            return "application/pdf";
+        case "txt":
+        case "md":
+        case "log":
+        case "conf":
+        case "json":
+        case "yaml":
+        case "yml":
+            return "text/plain";
+        default:
+            return "application/octet-stream";
+    }
+}
 
 export type CommandOutput =
     | string
@@ -26,160 +66,304 @@ let fileSystem: Record<string, FileSystemNode> = {
     "~": {
         type: "directory",
         children: {
+            // Apps you already have
             apps: {
                 type: "directory",
                 children: {
                     about: { type: "file", content: "About App" },
                     projects: { type: "file", content: "Projects App" },
                     terminal: { type: "file", content: "Terminal App" },
+                    PdfViewer: { type: "file", content: "Pdf Viewer App" }, // logical app id
                 },
             },
-            documents: {
+
+            // Desktop (with a cheeky shortcut)
+            Desktop: {
+                type: "directory",
+                children: {
+                    "Open My CV.desktop": {
+                        type: "file",
+                        mime: "application/x-desktop",
+                        content: `[Desktop Entry]
+Type=Application
+Name=Open My CV
+Exec=openfile ~/Documents/CV/CV_Lucas_Colaco.pdf
+Comment=Shortcut to Lucas' CV
+`,
+                    },
+                    "README.txt": {
+                        type: "file",
+                        mime: "text/plain",
+                        content:
+                            "Drag files here? Not supported (yet). Try `ls`, `cd Desktop`, then `cat README.txt` 😉",
+                    },
+                },
+            },
+
+            // Documents with real “portfolio” content
+            Documents: {
                 type: "directory",
                 children: {
                     "readme.txt": {
                         type: "file",
+                        mime: "text/plain",
                         content: "This is a fake terminal.\nFeel free to explore.",
                     },
                     "about_me.txt": {
                         type: "file",
-                        content: `
-Hi, I'm Lucas Gabriel Colaço 👋
-
-I'm a Software Developer passionate about building scalable web apps, intuitive UIs, and modern digital experiences.
-
-📍 Based in Zürich, Switzerland  
-🎓 EFZ Applikationsentwickler (Grade: 5.6, ZLI Award, Best in Rank 2025)  
-💻 Lead Frontend Dev @ expertshare AG  
-📚 CS Student @ ZHAW  
-🌐 Portfolio / Terminal: You're looking at it right now ;P
-
-Core Skills:
-- Frontend: React, JavaScript, HTML, CSS, SCSS
-- Backend: C#, .NET, REST APIs, PostgreSQL
-- Design & UX: Figma, Webflow, Rive Animations, Elementor
-- Tools: Git, Postman, OBS Studio, Adobe Suite
-
-Links:
-- LinkedIn:<a>https://www.linkedin.com/in/lucas-gabriel-colaco/</a>
-- GitHub: https://github.com/LucasCGG
-- Instagram: https://www.instagram.com/lucas.gabriel.cc/
-          `.trim(),
+                        mime: "text/plain",
+                        content: `...your same about text...`,
                     },
                     "skills.txt": {
                         type: "file",
-                        content: `
-Technical Skills Overview:
-
-Frontend:
-- ReactJS / JSX
-- HTML / CSS / SCSS
-- JavaScript / TypeScript
-
-Backend:
-- C# / .NET
-- PostgreSQL
-- REST APIs & Webhooks
-
-Design & Prototyping:
-- Figma, Webflow, Rive, Elementor
-- Adobe Photoshop & Premiere
-
-Other Tools:
-- Git, Postman, OBS Studio, Framer
-
-Languages:
-- German (Fluent)
-- English (Fluent)
-- Portuguese (Fluent)
-- French (Intermediate)
-          `.trim(),
+                        mime: "text/plain",
+                        content: `...your same skills text...`,
                     },
                     "timeline.txt": {
                         type: "file",
-                        content: `
-Career Timeline:
-
-2021 → Started WISS School  
-    • Began EFZ program in software development.
-
-2023 → Apprenticeship @ Expertshare AG  
-    • Worked on SaaS platforms, UI/UX, and web apps.
-
-2025 → EFZ Graduation & Awards  
-    • Graduated with a 5.6 grade.
-    • Received ZLI Award & Best in Rank.
-
-Present → Lead Frontend Developer & CS Student  
-    • Leading frontend development @ expertshare AG.
-    • Studying Computer Science at ZHAW.
-          `.trim(),
+                        mime: "text/plain",
+                        content: `...your same timeline text...`,
                     },
                     "contacts.txt": {
                         type: "file",
-                        content: `
-Contact Information:
+                        mime: "text/plain",
+                        content: `...your same contacts text...`,
+                    },
+                    "CV_Lucas_Colaco.pdf": {
+                        type: "file",
+                        mime: "application/pdf",
+                        src: "/files/CV_Lucas_Colaco.pdf",
+                    },
+                    "dont_open.pdf": {
+                        type: "file",
+                        mime: "application/pdf",
+                        src: "/files/easter-eggs/duck_manifesto.pdf",
+                    },
 
-📧 Email: colaco.lucasgabriel@gmail.com
-📱 Phone: +41 78 800 95 78
-🌐 LinkedIn: https://www.linkedin.com/in/lucas-gabriel-colaco/
-💻 GitHub: https://github.com/LucasCGG
-📸 Instagram: https://www.instagram.com/lucas.gabriel.cc/
-🏠 Location: Hüttikon, Switzerland
-          `.trim(),
+                    Notes: {
+                        type: "directory",
+                        children: {
+                            "ideas.txt": {
+                                type: "file",
+                                mime: "text/plain",
+                                content:
+                                    "- Rive hero animation with cursor parallax\n- Hyprland tiling animation when opening apps\n- Fake package manager `pacduck`",
+                            },
+                            "todo.txt": {
+                                type: "file",
+                                mime: "text/plain",
+                                content:
+                                    "[ ] polish window snap\n[ ] add `tree` command\n[ ] power menu animation\n[ ] add fetch banner",
+                            },
+                        },
                     },
                 },
             },
-            downloads: {
+
+            Downloads: { type: "directory", children: {} },
+
+            Pictures: {
                 type: "directory",
                 children: {
-                    //                     "lucas_cv.txt": {
-                    //                         type: "file",
-                    //                         content: `
-                    // Lucas Gabriel Colaço — Software Developer
-                    // Summary:
-                    // I enjoy making tech feel simple — for users, and for the teams building it. Passionate about clean, scalable, and user-friendly solutions.
-                    // Experience:
-                    // 2023-2025 → Software Developer @ expertshare AG
-                    //     - Developed and maintained SaaS platforms & CRM websites.
-                    //     - Improved UI/UX for brand consistency.
-                    //     - Supported OBS live streams for hybrid events.
-                    // Private Projects:
-                    // - Barcode to Shopping List (v2) → WhatsApp + .NET + PostgreSQL integration.
-                    // - Rive Animation Handler → Integrated Rive animations dynamically into WordPress.
-                    // - BusinessScraper → Python tool using Google Places API.
-                    // Education:
-                    // - EFZ Applikationsentwickler @ WISS (Grade 5.6, ZLI Award, Best in Rank 2025).
-                    // - CS Student @ ZHAW.
-                    // Skills:
-                    // React · C# · .NET · PostgreSQL · Webflow · WordPress · Figma · Rive · OBS Studio · Adobe Suite
-                    // GitHub:
-                    // - https://github.com/LucasCGG
-                    // - https://github.com/LucasCGG/WallyCart
-                    // - https://github.com/LucasCGG/barcode-to-list
-                    // - https://github.com/LucasCGG/animation-handler-for-rive
-                    // - https://github.com/LucasCGG/BusinessScraper
-                    //           `.trim(),
-                    //                     },
+                    "hypr_screenshot.png": {
+                        type: "file",
+                        mime: "image/png",
+                        src: "/files/images/hypr_screenshot.png",
+                    },
+                    "duck.png": { type: "file", mime: "image/png", src: "/files/images/duck.png" },
                 },
             },
+
+            // Realistic dotfiles & configs (hidden)
+            ".config": {
+                type: "directory",
+                hidden: true,
+                children: {
+                    hypr: {
+                        type: "directory",
+                        children: {
+                            "hyprland.conf": {
+                                type: "file",
+                                mime: "text/plain",
+                                content: `# Hyprland (fake)
+monitor=,preferred,auto,1
+input {
+  kb_layout=ch
+}
+exec-once = waybar & mako`,
+                            },
+                            "keybinds.conf": {
+                                type: "file",
+                                mime: "text/plain",
+                                content: `# Binds (fake)
+bind = SUPER, RETURN, exec, kitty
+bind = SUPER, Q, killactive`,
+                            },
+                        },
+                    },
+                    waybar: {
+                        type: "directory",
+                        children: {
+                            "config.jsonc": {
+                                type: "file",
+                                mime: "text/plain",
+                                content: "{ /* pretend waybar config */ }",
+                            },
+                            "style.css": {
+                                type: "file",
+                                mime: "text/plain",
+                                content: "/* pretend CSS */",
+                            },
+                        },
+                    },
+                    kitty: {
+                        type: "directory",
+                        children: {
+                            "kitty.conf": {
+                                type: "file",
+                                mime: "text/plain",
+                                content: "font_size 12.0\nbackground_opacity 0.9",
+                            },
+                        },
+                    },
+                    neofetch: {
+                        type: "directory",
+                        children: {
+                            "config.conf": {
+                                type: "file",
+                                mime: "text/plain",
+                                content: "# pretend neofetch config",
+                            },
+                        },
+                    },
+                    "starship.toml": {
+                        type: "file",
+                        mime: "text/plain",
+                        content: '[character]\nsuccess_symbol = "🦆 "\nerror_symbol = "💥 "',
+                    },
+                },
+            },
+
+            ".ssh": {
+                type: "directory",
+                hidden: true,
+                children: {
+                    config: {
+                        type: "file",
+                        mime: "text/plain",
+                        content: `Host github.com
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519`,
+                    },
+                    "id_ed25519.pub": {
+                        type: "file",
+                        mime: "text/plain",
+                        content: "ssh-ed25519 AAAA... lucas@hypr",
+                    },
+                },
+            },
+
+            ".local": {
+                type: "directory",
+                hidden: true,
+                children: {
+                    share: {
+                        type: "directory",
+                        children: {
+                            applications: {
+                                type: "directory",
+                                children: {
+                                    "portfolio.desktop": {
+                                        type: "file",
+                                        mime: "application/x-desktop",
+                                        content: `[Desktop Entry]
+Type=Application
+Name=Portfolio
+Exec=open projects
+Comment=Launches projects app`,
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+
+            // Fun “system-like” areas (not actually system-critical)
+            etc: {
+                type: "directory",
+                children: {
+                    "os-release": {
+                        type: "file",
+                        mime: "text/plain",
+                        content: `NAME="Arch (Replica)"
+PRETTY_NAME="Arch Replica (Hyprland)"`,
+                    },
+                    motd: {
+                        type: "file",
+                        mime: "text/plain",
+                        content: "Welcome to QuackdiOS 🦆  — type `fortune`",
+                    },
+                },
+            },
+
+            usr: {
+                type: "directory",
+                children: {
+                    bin: {
+                        type: "directory",
+                        children: {
+                            pacduck: {
+                                type: "file",
+                                mime: "text/plain",
+                                content: "#!/bin/duck\n# fake package manager",
+                            },
+                        },
+                    },
+                    share: { type: "directory", children: {} },
+                },
+            },
+
+            var: {
+                type: "directory",
+                children: {
+                    log: {
+                        type: "directory",
+                        children: {
+                            "system.log": {
+                                type: "file",
+                                mime: "text/plain",
+                                content: "Aug 29 23:59:59 kernel: duck module loaded",
+                            },
+                            "hypr.log": {
+                                type: "file",
+                                mime: "text/plain",
+                                content: "[INFO] fake compositor started",
+                            },
+                        },
+                    },
+                },
+            },
+
+            // Your existing secrets + silly “critical” file
             ".secrets": {
                 type: "directory",
+                hidden: true,
                 children: {
                     "passwords.txt": {
                         type: "file",
+                        mime: "text/plain",
                         content: `root: hunter2\nadmin: bread123\nlucas: ducklover`,
                     },
                 },
             },
-            system32: {
-                type: "directory",
-                children: {
-                    kernel: {
-                        type: "file",
-                        content: "Binary gibberish\nDo not delete this file. Seriously.",
-                    },
-                },
+
+            // Keep the joke, but make it Linuxy
+            "vmlinuz-duck": {
+                type: "file",
+                mime: "application/octet-stream",
+                content: "Binary gibberish\nDo not delete this file. Seriously.",
             },
         },
     },
@@ -395,6 +579,35 @@ Available commands:
             if (!appId) return "Specify an app to maximize.";
             useWindowStore.getState().toggleFullscreenApp(appId);
             return `Toggling fullscreen on "${appId}"...`;
+        },
+
+        "xdg-open": (args: string[]) => {
+            if (duckMode) return `You try to xdg-open "${args[0]}", but it's just.... feathers?`;
+
+            const raw = args[0];
+            if (!raw) return "Usage: xdg-open [FILE|URL]";
+
+            // TODO: Implement navigate to correct URL inside the browser app
+            if (/ĥttps?:\/\//i.test(raw)) {
+                useWindowStore.getState().openApp?.("browser");
+                return `Opening URL: ${raw}...`;
+            }
+
+            const abs = toAbsolutePath(raw);
+            const node = resolvePath(abs);
+            if (!node || node.type !== "file") return `xdg-open: "${raw}": No such file`;
+
+            const mime = node.mime || guessMime(raw);
+            const isPdf = mime === "application/pdf" || raw.toLowerCase().endsWith(".pdf");
+            const isText = mime.startsWith("text/");
+
+            if ((isPdf && (node.src || node.content)) || isText) {
+                useWindowStore.getState().openApp("pdfviewer", {
+                    props: {
+                        fileName: { node },
+                    },
+                });
+            }
         },
 
         // Duck-specific commands

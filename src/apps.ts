@@ -34,7 +34,7 @@ export const appsRegistry = {
         id: "browser",
         title: "Browser",
         component: Browser,
-        icon: "", // TODO: Implement "Browser Icon"
+        icon: "icn-browser",
         defaultSize: { width: 700, height: 500 },
         pinned: true,
     },
@@ -44,6 +44,6 @@ export const appsRegistry = {
         component: PdfViewer,
         icon: "", // TODO: Implement "Browser Icon"
         defaultSize: { width: 700, height: 500 },
-        pinned: true,
+        pinned: false,
     },
 };
