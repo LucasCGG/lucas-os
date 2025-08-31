@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Rect, useWindowStore } from "../../store";
+import { Rect, useWindowStore } from "../../atoms";
 import { appsRegistry } from "../../apps";
 import { AppIconButton } from "../AppIconButton";
 import { AppIcon } from "../AppIcon";

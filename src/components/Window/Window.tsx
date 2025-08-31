@@ -1,6 +1,6 @@
 // Window.tsx
 import { Rnd } from "react-rnd";
-import { useWindowStore } from "../../store";
+import { useWindowStore } from "../../atoms";
 import { AppTruncatingTooltipText } from "../AppTruncatingTooltipText/AppTruncatingTooltipText";
 import { AppIconButton } from "../AppIconButton";
 import { useMemo } from "react";

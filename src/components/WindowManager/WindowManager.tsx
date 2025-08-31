@@ -2,9 +2,9 @@ import React, { FC, useEffect, useMemo, useRef } from "react";
 import ReactDOM from "react-dom";
 import gsap from "gsap";
 import { appsRegistry } from "../../apps";
-import { useWindowStore } from "../../store";
-import type { Rect } from "../../store";
-import { Window } from "../Window/Window";
+import { useWindowStore } from "../../atoms";
+import type { Rect } from "../../atoms";
+import { Window } from "../Window";
 
 const useFxLayer = () => {
     const [el, setEl] = React.useState<HTMLElement | null>(null);

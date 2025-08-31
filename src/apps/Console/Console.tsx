@@ -12,6 +12,7 @@ import { FitAddon } from "xterm-addon-fit";
 import { playRandomLoader } from "../../utils/loaderAnimations";
 import { createCommandHandlers } from "../../utils";
 import type { CommandOutput } from "../../utils";
+import { useTerminalStore } from "../../atoms";
 
 type ConfirmState = {
     pending: boolean;
@@ -168,11 +169,17 @@ export const Console: React.FC = () => {
         [handlers, instance, printLines]
     );
 
-    // 1) One-time init (theme, addons, loader, resize observer)
+    useEffect(() => {
+        if (!instance) return;
+
+        useTerminalStore.getState().setTerm(instance);
+        return () => useTerminalStore.getState().setTerm(null);
+    }, [instance]);
+
     useLayoutEffect(() => {
         if (!instance || !ref.current || startedRef.current) return;
 
-        startedRef.current = true; // set immediately to avoid racing re-renders
+        startedRef.current = true;
 
         try {
             instance.options.theme = {
@@ -222,11 +229,12 @@ export const Console: React.FC = () => {
         };
     }, [instance, ref, writePrompt]);
 
-    // 2) Reattach input handler whenever deps change
     useLayoutEffect(() => {
         if (!instance) return;
 
         const onDataDisp = instance.onData(async (data) => {
+            if (useTerminalStore.getState().hijacked) return;
+
             for (const ch of data) {
                 if (confirmRef.current.pending) {
                     if (ch === "\x7f") {

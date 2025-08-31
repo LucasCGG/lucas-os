@@ -34,6 +34,11 @@ export const Browser = () => {
                     onChange={(e) => setValue(e.target.value)}
                 />
             </div>
+            <div id="bookmark-row" className="w-full bg-black px-4 py-2">
+                {/* TODO: Add Bookmark icons */}
+                {/* TODO: Check how to display other pages in a Iframe */}
+                <AppIconButton icon="" onClick={() => setValue("https://github.com/LucasCGG")} />
+            </div>
             <iframe
                 id="broswer-iframe"
                 title="browser"

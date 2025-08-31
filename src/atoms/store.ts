@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { appsRegistry } from "./apps";
+import { appsRegistry } from "../apps";
 
 export type Rect = { x: number; y: number; width: number; height: number };
 

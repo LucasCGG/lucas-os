@@ -1,31 +1,60 @@
-import { useWindowStore } from "../../store";
+import { useFileSystemStore } from "../../atoms/fileSystem";
+import { useTerminalStore, useWindowStore } from "../../atoms";
+import { BufferSpec, MiniVim } from "../../apps/Console/MiniVim";
 
 type FileSystemNode = {
     type: "file" | "directory";
-
     content?: string;
     src?: string;
     mime?: string;
-
     children?: Record<string, FileSystemNode>;
-
     hidden?: boolean;
 };
 
+export type CommandOutput =
+    | string
+    | "__CLEAR__"
+    | {
+          type: "confirm";
+          message: string;
+          perform: () => string | Promise<string>;
+      };
+
+export const confirm = (
+    message: string,
+    perform: () => string | Promise<string>
+): CommandOutput => ({ type: "confirm", message, perform });
+
+function getCurrentPath(): string[] {
+    return [...useFileSystemStore.getState().currentPath];
+}
+
+function resolvePath(abs: string[]): FileSystemNode | null {
+    return useFileSystemStore.getState().resolvePath(abs);
+}
+
 function toAbsolutePath(raw: string): string[] {
-    if (!raw || raw === ".") return [...currentPath];
+    if (!raw || raw === ".") return [...getCurrentPath()];
     if (raw.startsWith("~/")) return ["~", ...raw.slice(2).split("/").filter(Boolean)];
     if (raw === "~") return ["~"];
     if (raw.startsWith("~")) return raw.split("/").filter(Boolean);
 
     const parts = raw.split("/").filter(Boolean);
-    const next = [...currentPath];
+    const next = [...getCurrentPath()];
     for (const p of parts) {
         if (p === "..") {
             if (next.length > 1) next.pop();
         } else if (p !== ".") next.push(p);
     }
     return next;
+}
+
+function currentDirNode(): FileSystemNode {
+    return resolvePath(getCurrentPath()) as FileSystemNode;
+}
+
+function pathString(): string {
+    return getCurrentPath().join("/");
 }
 
 function guessMime(name: string): string {
@@ -46,328 +75,13 @@ function guessMime(name: string): string {
     }
 }
 
-export type CommandOutput =
-    | string
-    | "__CLEAR__"
-    | {
-          type: "confirm";
-          message: string;
-          perform: () => string | Promise<string>;
-      };
-
-export const confirm = (
-    message: string,
-    perform: () => string | Promise<string>
-): CommandOutput => ({ type: "confirm", message, perform });
-
-let currentPath = ["~"];
-
-let fileSystem: Record<string, FileSystemNode> = {
-    "~": {
-        type: "directory",
-        children: {
-            // Apps you already have
-            apps: {
-                type: "directory",
-                children: {
-                    about: { type: "file", content: "About App" },
-                    projects: { type: "file", content: "Projects App" },
-                    terminal: { type: "file", content: "Terminal App" },
-                    PdfViewer: { type: "file", content: "Pdf Viewer App" }, // logical app id
-                },
-            },
-
-            // Desktop (with a cheeky shortcut)
-            Desktop: {
-                type: "directory",
-                children: {
-                    "Open My CV.desktop": {
-                        type: "file",
-                        mime: "application/x-desktop",
-                        content: `[Desktop Entry]
-Type=Application
-Name=Open My CV
-Exec=openfile ~/Documents/CV/CV_Lucas_Colaco.pdf
-Comment=Shortcut to Lucas' CV
-`,
-                    },
-                    "README.txt": {
-                        type: "file",
-                        mime: "text/plain",
-                        content:
-                            "Drag files here? Not supported (yet). Try `ls`, `cd Desktop`, then `cat README.txt` 😉",
-                    },
-                },
-            },
-
-            // Documents with real “portfolio” content
-            Documents: {
-                type: "directory",
-                children: {
-                    "readme.txt": {
-                        type: "file",
-                        mime: "text/plain",
-                        content: "This is a fake terminal.\nFeel free to explore.",
-                    },
-                    "about_me.txt": {
-                        type: "file",
-                        mime: "text/plain",
-                        content: `...your same about text...`,
-                    },
-                    "skills.txt": {
-                        type: "file",
-                        mime: "text/plain",
-                        content: `...your same skills text...`,
-                    },
-                    "timeline.txt": {
-                        type: "file",
-                        mime: "text/plain",
-                        content: `...your same timeline text...`,
-                    },
-                    "contacts.txt": {
-                        type: "file",
-                        mime: "text/plain",
-                        content: `...your same contacts text...`,
-                    },
-                    "CV_Lucas_Colaco.pdf": {
-                        type: "file",
-                        mime: "application/pdf",
-                        src: "/files/CV_Lucas_Colaco.pdf",
-                    },
-                    "dont_open.pdf": {
-                        type: "file",
-                        mime: "application/pdf",
-                        src: "/files/easter-eggs/duck_manifesto.pdf",
-                    },
-
-                    Notes: {
-                        type: "directory",
-                        children: {
-                            "ideas.txt": {
-                                type: "file",
-                                mime: "text/plain",
-                                content:
-                                    "- Rive hero animation with cursor parallax\n- Hyprland tiling animation when opening apps\n- Fake package manager `pacduck`",
-                            },
-                            "todo.txt": {
-                                type: "file",
-                                mime: "text/plain",
-                                content:
-                                    "[ ] polish window snap\n[ ] add `tree` command\n[ ] power menu animation\n[ ] add fetch banner",
-                            },
-                        },
-                    },
-                },
-            },
-
-            Downloads: { type: "directory", children: {} },
-
-            Pictures: {
-                type: "directory",
-                children: {
-                    "hypr_screenshot.png": {
-                        type: "file",
-                        mime: "image/png",
-                        src: "/files/images/hypr_screenshot.png",
-                    },
-                    "duck.png": { type: "file", mime: "image/png", src: "/files/images/duck.png" },
-                },
-            },
-
-            // Realistic dotfiles & configs (hidden)
-            ".config": {
-                type: "directory",
-                hidden: true,
-                children: {
-                    hypr: {
-                        type: "directory",
-                        children: {
-                            "hyprland.conf": {
-                                type: "file",
-                                mime: "text/plain",
-                                content: `# Hyprland (fake)
-monitor=,preferred,auto,1
-input {
-  kb_layout=ch
+function writeTree(mutator: (tree: Record<string, FileSystemNode>) => void) {
+    useFileSystemStore.setState((s: any) => {
+        const nextTree = { ...(s.tree as Record<string, FileSystemNode>) };
+        mutator(nextTree);
+        return { ...s, tree: nextTree };
+    });
 }
-exec-once = waybar & mako`,
-                            },
-                            "keybinds.conf": {
-                                type: "file",
-                                mime: "text/plain",
-                                content: `# Binds (fake)
-bind = SUPER, RETURN, exec, kitty
-bind = SUPER, Q, killactive`,
-                            },
-                        },
-                    },
-                    waybar: {
-                        type: "directory",
-                        children: {
-                            "config.jsonc": {
-                                type: "file",
-                                mime: "text/plain",
-                                content: "{ /* pretend waybar config */ }",
-                            },
-                            "style.css": {
-                                type: "file",
-                                mime: "text/plain",
-                                content: "/* pretend CSS */",
-                            },
-                        },
-                    },
-                    kitty: {
-                        type: "directory",
-                        children: {
-                            "kitty.conf": {
-                                type: "file",
-                                mime: "text/plain",
-                                content: "font_size 12.0\nbackground_opacity 0.9",
-                            },
-                        },
-                    },
-                    neofetch: {
-                        type: "directory",
-                        children: {
-                            "config.conf": {
-                                type: "file",
-                                mime: "text/plain",
-                                content: "# pretend neofetch config",
-                            },
-                        },
-                    },
-                    "starship.toml": {
-                        type: "file",
-                        mime: "text/plain",
-                        content: '[character]\nsuccess_symbol = "🦆 "\nerror_symbol = "💥 "',
-                    },
-                },
-            },
-
-            ".ssh": {
-                type: "directory",
-                hidden: true,
-                children: {
-                    config: {
-                        type: "file",
-                        mime: "text/plain",
-                        content: `Host github.com
-  HostName github.com
-  User git
-  IdentityFile ~/.ssh/id_ed25519`,
-                    },
-                    "id_ed25519.pub": {
-                        type: "file",
-                        mime: "text/plain",
-                        content: "ssh-ed25519 AAAA... lucas@hypr",
-                    },
-                },
-            },
-
-            ".local": {
-                type: "directory",
-                hidden: true,
-                children: {
-                    share: {
-                        type: "directory",
-                        children: {
-                            applications: {
-                                type: "directory",
-                                children: {
-                                    "portfolio.desktop": {
-                                        type: "file",
-                                        mime: "application/x-desktop",
-                                        content: `[Desktop Entry]
-Type=Application
-Name=Portfolio
-Exec=open projects
-Comment=Launches projects app`,
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-
-            // Fun “system-like” areas (not actually system-critical)
-            etc: {
-                type: "directory",
-                children: {
-                    "os-release": {
-                        type: "file",
-                        mime: "text/plain",
-                        content: `NAME="Arch (Replica)"
-PRETTY_NAME="Arch Replica (Hyprland)"`,
-                    },
-                    motd: {
-                        type: "file",
-                        mime: "text/plain",
-                        content: "Welcome to QuackdiOS 🦆  — type `fortune`",
-                    },
-                },
-            },
-
-            usr: {
-                type: "directory",
-                children: {
-                    bin: {
-                        type: "directory",
-                        children: {
-                            pacduck: {
-                                type: "file",
-                                mime: "text/plain",
-                                content: "#!/bin/duck\n# fake package manager",
-                            },
-                        },
-                    },
-                    share: { type: "directory", children: {} },
-                },
-            },
-
-            var: {
-                type: "directory",
-                children: {
-                    log: {
-                        type: "directory",
-                        children: {
-                            "system.log": {
-                                type: "file",
-                                mime: "text/plain",
-                                content: "Aug 29 23:59:59 kernel: duck module loaded",
-                            },
-                            "hypr.log": {
-                                type: "file",
-                                mime: "text/plain",
-                                content: "[INFO] fake compositor started",
-                            },
-                        },
-                    },
-                },
-            },
-
-            // Your existing secrets + silly “critical” file
-            ".secrets": {
-                type: "directory",
-                hidden: true,
-                children: {
-                    "passwords.txt": {
-                        type: "file",
-                        mime: "text/plain",
-                        content: `root: hunter2\nadmin: bread123\nlucas: ducklover`,
-                    },
-                },
-            },
-
-            // Keep the joke, but make it Linuxy
-            "vmlinuz-duck": {
-                type: "file",
-                mime: "application/octet-stream",
-                content: "Binary gibberish\nDo not delete this file. Seriously.",
-            },
-        },
-    },
-};
 
 export function createCommandHandlers({
     duckCount,
@@ -386,26 +100,6 @@ export function createCommandHandlers({
 }) {
     const bootTime = Date.now();
 
-    function resolvePath(pathArray: string[]): FileSystemNode | null {
-        let node: FileSystemNode = fileSystem["~"];
-        for (const part of pathArray.slice(1)) {
-            if (node.type === "directory" && node.children?.[part]) {
-                node = node.children[part];
-            } else {
-                return null;
-            }
-        }
-        return node;
-    }
-
-    function currentDirNode(): FileSystemNode {
-        return resolvePath(currentPath) as FileSystemNode;
-    }
-
-    function pathString(): string {
-        return currentPath.join("/");
-    }
-
     return {
         help: () => {
             if (duckMode) {
@@ -421,7 +115,6 @@ DuckdiOS Command Menu (QUACK MODE):
 - honk?           no.
         `.trim();
             }
-
             return `
 Available commands:
 - help            Show this help menu
@@ -451,24 +144,34 @@ Available commands:
 
         clear: () => "__CLEAR__",
 
-        ls: () => {
-            const node = currentDirNode();
-            if (node.type !== "directory") return "Not a directory";
+        ls: (args: string[] = []) => {
+            if (!args[0]) {
+                const node = resolvePath(getCurrentPath());
+                if (!node || node.type !== "directory") return "Not a directory";
+                return Object.keys(node.children ?? {}).join("  ");
+            }
+            const abs = toAbsolutePath(args[0]);
+            const node = resolvePath(abs);
+            if (!node) return `ls: cannot access '${args[0]}': No such file or directory`;
+            if (node.type !== "directory") return args[0];
             return Object.keys(node.children ?? {}).join("  ");
         },
 
         cd: (args: string[]) => {
             if (duckMode) return "cd: ducks don't do directories.";
-            const dir = args[0];
-            if (!dir) return "Usage: cd [directory]";
-            if (dir === "..") {
-                if (currentPath.length > 1) currentPath.pop();
-                return `Moved to ${pathString()}`;
+            const raw = args[0];
+            if (!raw) return "Usage: cd [directory]";
+            if (raw === ".") return `Moved to ${getCurrentPath().join("/")}`;
+            if (raw === "..") {
+                const cur = getCurrentPath();
+                if (cur.length > 1) useFileSystemStore.setState({ currentPath: cur.slice(0, -1) });
+                return `Moved to ${getCurrentPath().join("/")}`;
             }
-            const next = resolvePath([...currentPath, dir]);
-            if (!next || next.type !== "directory") return `cd: no such directory: ${dir}`;
-            currentPath.push(dir);
-            return `Moved to ${pathString()}`;
+            const abs = toAbsolutePath(raw);
+            const node = resolvePath(abs);
+            if (!node || node.type !== "directory") return `cd: no such directory: ${raw}`;
+            useFileSystemStore.setState({ currentPath: abs });
+            return `Moved to ${abs.join("/")}`;
         },
 
         pwd: () => (duckMode ? "/pond/nest/bread" : pathString()),
@@ -477,9 +180,13 @@ Available commands:
             if (duckMode) return "mkdir: ducks don't need folders, we have nests.";
             const name = args[0];
             if (!name) return "Usage: mkdir [name]";
-            const node = currentDirNode();
-            if (node.children?.[name]) return "Directory already exists.";
-            node.children![name] = { type: "directory", children: {} };
+            const here = currentDirNode();
+            if (here.children?.[name]) return "Directory already exists.";
+            writeTree((tree) => {
+                let node: FileSystemNode = tree["~"];
+                for (const part of getCurrentPath().slice(1)) node = (node.children as any)[part];
+                (node.children ||= {})[name] = { type: "directory", children: {} };
+            });
             return `Directory "${name}" created.`;
         },
 
@@ -487,8 +194,11 @@ Available commands:
             if (duckMode) return "touch: touching files is weird. Try bread instead.";
             const name = args[0];
             if (!name) return "Usage: touch [filename]";
-            const node = currentDirNode();
-            node.children![name] = { type: "file", content: "" };
+            writeTree((tree) => {
+                let node: FileSystemNode = tree["~"];
+                for (const part of getCurrentPath().slice(1)) node = (node.children as any)[part];
+                (node.children ||= {})[name] = { type: "file", content: "" };
+            });
             return `File "${name}" created.`;
         },
 
@@ -504,22 +214,30 @@ Available commands:
         rm: (args: string[]): CommandOutput => {
             if (duckMode) return "rm: Ducks never forget. But they also don't delete.";
             const name = args[0];
-            const node = currentDirNode();
             if (!name) return "Usage: rm [name]";
-            if (!node.children?.[name]) {
+
+            const here = currentDirNode();
+            if (!here.children?.[name]) {
                 return `rm: cannot remove '${name}': No such file or directory`;
             }
 
-            // choose which names are “dangerous”
             const dangerous = new Set(["kernel", "system32"]);
             if (dangerous.has(name)) {
                 return confirm(`rm:"${name}". Are you sure? (Y/N)`, () => {
-                    delete node.children![name];
+                    writeTree((tree) => {
+                        let node: FileSystemNode = tree["~"];
+                        for (const p of getCurrentPath().slice(1)) node = (node.children as any)[p];
+                        if (node.children) delete node.children[name];
+                    });
                     return `'${name}' removed. May the ducks be with you.`;
                 });
             }
 
-            delete node.children[name];
+            writeTree((tree) => {
+                let node: FileSystemNode = tree["~"];
+                for (const p of getCurrentPath().slice(1)) node = (node.children as any)[p];
+                if (node.children) delete node.children[name];
+            });
             return `'${name}' removed.`;
         },
 
@@ -610,7 +328,59 @@ Available commands:
             }
         },
 
-        // Duck-specific commands
+        vim: (args: string[]) => {
+            if (duckMode) return "vim: Ducks prefer `quack` over `:wq`.";
+
+            const term = useTerminalStore.getState().term;
+            if (!term) return "vim: terminal not ready.";
+
+            const files = args.length ? args : ["[No Name]"];
+
+            const specs: BufferSpec[] = files.map((raw) => {
+                let pathArr = raw.startsWith("~") ? ["~"] : [...getCurrentPath()];
+                const segs = (raw.startsWith("~") ? raw.replace(/^~\/?/, "") : raw)
+                    .split("/")
+                    .filter(Boolean);
+                for (const s of segs) {
+                    if (s === ".") continue;
+                    if (s === "..") {
+                        if (pathArr.length > 1) pathArr.pop();
+                    } else pathArr.push(s);
+                }
+
+                const parentPath = pathArr.slice(0, -1);
+                const fname = pathArr[pathArr.length - 1] || "[No Name]";
+                const parent = resolvePath(parentPath);
+                if (!parent || parent.type !== "directory") return { filename: raw, text: "" };
+
+                if (!parent.children![fname])
+                    parent.children![fname] = { type: "file", content: "" };
+                const node = parent.children![fname];
+
+                const get = () => (node.type === "file" ? (node.content ?? "") : "");
+                const set = (t: string) => {
+                    if (node.type === "file") node.content = t;
+                };
+
+                return { filename: raw, text: get(), onSave: set };
+            });
+
+            useTerminalStore.getState().setHijacked(true);
+
+            const editor = new MiniVim(term, specs, () => {
+                useTerminalStore.getState().setHijacked(false);
+                term.write("Exited editor\r\n");
+                term.write("> ");
+            });
+
+            editor.onUi = (ui) => {
+                // Todo: add Some logic for eample to change title bar or something
+            };
+
+            return "";
+        },
+
+        // Duck stuff
         bread: () => {
             if (!duckMode) return "bread: command not found. Try quack-ing first.";
             return "🍞 You toss a piece of bread. Somewhere, a duck smiles.";
