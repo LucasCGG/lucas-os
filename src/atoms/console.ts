@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Terminal } from "xterm";
+import { useEffect } from "react";
 
 type TerminalState = {
     term: Terminal | null;
@@ -7,6 +8,9 @@ type TerminalState = {
 
     hijacked: boolean;
     setHijacked: (v: boolean) => void;
+
+    history: string[];
+    pushHistory: (cmd: string) => void;
 };
 
 export const useTerminalStore = create<TerminalState>((set) => ({
@@ -14,4 +18,6 @@ export const useTerminalStore = create<TerminalState>((set) => ({
     setTerm: (t) => set({ term: t }),
     hijacked: false,
     setHijacked: (v) => set({ hijacked: v }),
+    history: [],
+    pushHistory: (cmd) => set((s) => ({ history: [...s.history, cmd.trim()] })),
 }));

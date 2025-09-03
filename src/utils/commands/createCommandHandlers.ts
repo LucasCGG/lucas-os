@@ -33,7 +33,7 @@ function resolvePath(abs: string[]): FileSystemNode | null {
     return useFileSystemStore.getState().resolvePath(abs);
 }
 
-function toAbsolutePath(raw: string): string[] {
+export function toAbsolutePath(raw: string): string[] {
     if (!raw || raw === ".") return [...getCurrentPath()];
     if (raw.startsWith("~/")) return ["~", ...raw.slice(2).split("/").filter(Boolean)];
     if (raw === "~") return ["~"];
@@ -113,33 +113,43 @@ DuckdiOS Command Menu (QUACK MODE):
 - unduck          Return to boring human mode
 - waddle          Just... waddles
 - honk?           no.
-        `.trim();
+    `.trim();
             }
+
             return `
 Available commands:
-- help            Show this help menu
-- clear           Clear the terminal screen
-- ls              List items in current directory
-- cd [dir]        Change fake directory
-- pwd             Print current directory
-- whoami          Show user identity
-- date            Show current date/time
-- uptime          Time since terminal was opened
-- echo [text]     Print text back
-- open [app]      Open an app (e.g. open about)
-- close [app]     Close an app
-- minimize [app]  Minimize an app
-- maximize [app]  Maximize an app
-- mkdir [dir]     Create a new fake directory
-- touch [file]    Create a new fake file
-- cat [file]      Display contents of a fake file
-- rm [name]       Delete a fake file or folder (dangerous!)
-- quack           Talk to the OS duck
-- duckmode        Check Duck Mode status
-- duckstats       See Duck Mode uptime
-- unduck          Disable Duck Mode (why would you tho?)
-- waddle          Just... waddles
-      `.trim();
+# Basics
+- help               Show this help menu
+- clear              Clear the terminal screen
+- echo [text]        Print text back
+
+# File system
+- ls [dir]           List items (defaults to current directory)
+- cd [dir]           Change directory
+- pwd                Print current directory
+- mkdir [dir]        Create a new directory
+- touch [file]       Create a new file
+- cat [file]         Display file contents
+- rm [name]          Delete a file or folder (dangerous!)
+- xdg-open [FILE|URL] Open a file or URL (PDF/text opens viewer)
+
+# Editor
+- vim [files...]     Open a minimal editor for one or more files
+
+# Apps & windows
+- open [app]         Open an app (e.g. open about)
+- close [app]        Close an app
+- minimize [app]     Minimize an app
+- maximize [app]     Toggle fullscreen for an app
+
+# System info & fun
+- whoami             Show user identity
+- date               Show current date/time
+- uptime             Time since terminal was opened
+- sudo               Attempt superuser privileges (good luck)
+- hack               Try (and fail) to breach the mainframe
+- fortune            Print a short fortune
+  `.trim();
         },
 
         clear: () => "__CLEAR__",

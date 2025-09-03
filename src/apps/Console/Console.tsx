@@ -10,9 +10,9 @@ import React, {
 import { useXTerm } from "react-xtermjs";
 import { FitAddon } from "xterm-addon-fit";
 import { playRandomLoader } from "../../utils/loaderAnimations";
-import { createCommandHandlers } from "../../utils";
+import { createCommandHandlers, toAbsolutePath } from "../../utils";
 import type { CommandOutput } from "../../utils";
-import { useTerminalStore } from "../../atoms";
+import { useFileSystemStore, useTerminalStore } from "../../atoms";
 
 type ConfirmState = {
     pending: boolean;
@@ -87,6 +87,130 @@ export const Console: React.FC = () => {
     const [duckMode, setDuckMode] = useState<boolean>(false);
     const [duckModeActivatedAt, setDuckModeActivatedAt] = useState<number | null>(null);
 
+    const history = useTerminalStore((s) => s.history);
+    const pushHistory = useTerminalStore((s) => s.pushHistory);
+
+    const histIdxRef = useRef<number | null>(null);
+    const stashRef = useRef<string | null>(null);
+
+    const pushHistoryIfNeeded = useCallback((cmd: string) => {
+        console.debug("cmd", cmd);
+        const trimmedCmd = cmd.trim();
+        if (trimmedCmd) {
+            console.debug("cmd.trim", cmd.trim());
+            console.debug("history", useTerminalStore.getState().history);
+            pushHistory(trimmedCmd);
+        }
+    }, []);
+
+    const renderInputLine = useCallback(
+        (newLine: string) => {
+            if (!instance) return;
+            instance.write("\r\x1b[2K");
+            instance.write(promptRef.current);
+            instance.write(newLine);
+            lineRef.current = newLine;
+        },
+        [instance]
+    );
+
+    const startBrowsing = () => {
+        if (histIdxRef === null) stashRef.current = lineRef.current;
+    };
+
+    const stopBrowsing = () => {
+        histIdxRef.current = null;
+        stashRef.current = null;
+    };
+
+    const navigateHistory = useCallback(
+        (delta: number) => {
+            if (!instance || history.length === 0) return;
+
+            startBrowsing();
+            let nextId: number | null;
+            if (histIdxRef.current === null) {
+                nextId = delta < 0 ? history.length - 1 : null;
+            } else {
+                const raw = histIdxRef.current + delta;
+                if (raw < 0) nextId = 0;
+                else if (raw >= history.length) nextId = null;
+                else nextId = raw;
+            }
+
+            histIdxRef.current = nextId;
+
+            if (nextId === null) {
+                renderInputLine(stashRef.current ?? "");
+            } else {
+                renderInputLine(history[nextId] ?? "");
+            }
+        },
+        [history, instance, renderInputLine]
+    );
+
+    const lcp = (arr: string[]) => {
+        if (arr.length === 0) return "";
+        let p = arr[0];
+        for (let i = 1; i < arr.length; i++) {
+            let j = 0;
+            const s = arr[i];
+            while (j < p.length && j < s.length && p[j] === s[j]) j++;
+            p = p.slice(0, j);
+            if (!p) break;
+        }
+        return p;
+    };
+
+    const splitTokens = (line: string) => {
+        const parts = line.split(/(\s+)/).filter(Boolean);
+        const tokens: string[] = [];
+        for (let i = 0; i < parts.length; i++) {
+            if (!/^\s+$/.test(parts[i])) tokens.push(parts[i]);
+        }
+        const endsWithSpace = /\s$/.test(line);
+        const currentTokenIndex = endsWithSpace ? tokens.length : Math.max(0, tokens.length - 1);
+        const currentToken = endsWithSpace ? "" : (tokens[tokens.length - 1] ?? "");
+        return { tokens, currentTokenIndex, currentToken, endsWithSpace };
+    };
+
+    const splitDirBase = (raw: string) => {
+        const idx = raw.lastIndexOf("/");
+        if (idx === -1) return { dir: "", base: raw };
+        return { dir: raw.slice(0, idx), base: raw.slice(idx + 1) };
+    };
+
+    const listDirEntriesForPathString = (rawPath: string): string[] => {
+        const fs = useFileSystemStore.getState();
+        const { dir } = splitDirBase(rawPath);
+        const dirStr = dir || ".";
+
+        const absDir = toAbsolutePath(dirStr);
+        const node = fs.resolvePath(absDir);
+        if (!node || node.type !== "directory" || !node.children) return [];
+        return Object.keys(node.children);
+    };
+
+    const completePathToken = (
+        rawPathToken: string
+    ): { prefix: string; candidates: string[]; dirPrefix: string } => {
+        const { dir, base } = splitDirBase(rawPathToken);
+        const entries = listDirEntriesForPathString(rawPathToken);
+        const candidates = entries.filter((name) => name.startsWith(base));
+        return { prefix: base, candidates, dirPrefix: dir };
+    };
+
+    const replaceCurrentToken = (line: string, replacement: string) => {
+        const { tokens, currentTokenIndex, endsWithSpace } = splitTokens(line);
+        if (tokens.length === 0) return replacement;
+        if (currentTokenIndex >= tokens.length) {
+            return line + replacement;
+        }
+        const before = tokens.slice(0, currentTokenIndex).join(" ");
+        const after = tokens.slice(currentTokenIndex + 1).join(" ");
+        return [before, replacement, after].filter(Boolean).join(" ").replace(/\s+$/, "");
+    };
+
     useEffect(() => {
         busyRef.current = state.busy;
     }, [state.busy]);
@@ -116,6 +240,7 @@ export const Console: React.FC = () => {
             setDuckModeActivatedAt,
         ]
     );
+
     const writePrompt = useCallback(() => {
         instance?.write(promptRef.current);
     }, [instance]);
@@ -232,10 +357,43 @@ export const Console: React.FC = () => {
     useLayoutEffect(() => {
         if (!instance) return;
 
-        const onDataDisp = instance.onData(async (data) => {
+        let escBuf = "";
+
+        const renderInputLine = (newLine: string) => {
+            instance.write("\r\x1b[2K");
+            instance.write(promptRef.current);
+            instance.write(newLine);
+            lineRef.current = newLine;
+        };
+
+        const disp = instance.onData(async (data) => {
             if (useTerminalStore.getState().hijacked) return;
 
             for (const ch of data) {
+                if (escBuf || ch === "\x1b") {
+                    escBuf += ch;
+                    if (escBuf.length === 3) {
+                        if (escBuf === "\x1b[A") {
+                            navigateHistory(-1);
+                        } else if (escBuf === "\x1b[B") {
+                            navigateHistory(+1);
+                        }
+                        escBuf = "";
+                    }
+                    if (escBuf.length > 5) escBuf = "";
+                    continue;
+                }
+
+                if (ch === "\x10") {
+                    navigateHistory(-1);
+                    continue;
+                }
+
+                if (ch === "\x0e") {
+                    navigateHistory(+1);
+                    continue;
+                }
+
                 if (confirmRef.current.pending) {
                     if (ch === "\x7f") {
                         if (lineRef.current.length > 0) {
@@ -259,14 +417,20 @@ export const Console: React.FC = () => {
                         const restore = confirmRef.current.restorePrompt || "> ";
                         if (yes && confirmRef.current.perform) {
                             const result = await Promise.resolve(confirmRef.current.perform());
-                            printLines(result);
+                            if (result != null) {
+                                for (const line of result.toString().split("\n"))
+                                    instance.writeln(line);
+                            }
                         } else {
                             instance.writeln("Aborted.");
                         }
 
                         dispatch({ type: "END_CONFIRM" });
                         dispatch({ type: "SET_PROMPT", prompt: restore });
-                        writePrompt();
+
+                        stopBrowsing();
+
+                        instance.write(restore);
                         continue;
                     }
 
@@ -279,23 +443,31 @@ export const Console: React.FC = () => {
 
                 if (ch === "\r") {
                     const input = lineRef.current;
-                    if (input.trim().length === 0) {
+                    const trimmed = input.trim();
+
+                    if (trimmed.length === 0) {
                         instance.write("\r\n");
-                        if (!busyRef.current) writePrompt();
+                        if (!busyRef.current) instance.write(promptRef.current);
                         lineRef.current = "";
+                        stopBrowsing();
                         continue;
                     }
 
                     if (busyRef.current) {
                         dispatch({ type: "QUEUE_CMD", cmd: input });
                         lineRef.current = "";
+                        stopBrowsing();
                         continue;
                     }
 
                     instance.write("\r\n");
                     lineRef.current = "";
+
+                    if (trimmed) pushHistory(trimmed);
+                    stopBrowsing();
+
                     await runCommand(input);
-                    writePrompt();
+                    instance.write(promptRef.current);
                     continue;
                 }
 
@@ -304,18 +476,118 @@ export const Console: React.FC = () => {
                         instance.write("\b \b");
                         lineRef.current = lineRef.current.slice(0, -1);
                     }
+
+                    if (histIdxRef.current !== null) stopBrowsing();
                     continue;
                 }
 
                 if (ch >= " " && ch !== "\x7f") {
                     instance.write(ch);
                     lineRef.current += ch;
+                    if (histIdxRef.current !== null) stopBrowsing();
+                }
+                if (ch === "\t") {
+                    const input = lineRef.current;
+                    const { tokens, currentTokenIndex, currentToken, endsWithSpace } =
+                        splitTokens(input);
+
+                    const commandNames = Object.keys(handlers);
+                    const isCompletingCommand = currentTokenIndex === 0 && !endsWithSpace;
+
+                    if (isCompletingCommand) {
+                        const matches = commandNames.filter((c) => c.startsWith(currentToken));
+                        if (matches.length === 0) {
+                            instance.write("\x07");
+                        } else if (matches.length === 1) {
+                            renderInputLine(replaceCurrentToken(input, matches[0]));
+                        } else {
+                            const common = lcp(matches);
+                            if (common.length > currentToken.length) {
+                                renderInputLine(replaceCurrentToken(input, common));
+                            } else {
+                                instance.write("\r\n");
+                                matches.forEach((m) => instance.writeln(m));
+                                instance.write(promptRef.current + lineRef.current);
+                            }
+                        }
+                        continue;
+                    }
+
+                    const cmd = (tokens[0] ?? "").trim();
+                    const fileyCommands = new Set([
+                        "ls",
+                        "cd",
+                        "cat",
+                        "rm",
+                        "vim",
+                        "xdg-open",
+                        "open",
+                        "touch",
+                        "mkdir",
+                    ]);
+
+                    if (!cmd || !fileyCommands.has(cmd)) {
+                        if (currentToken.includes("/") || currentToken.startsWith("~")) {
+                            const { prefix, candidates, dirPrefix } =
+                                completePathToken(currentToken);
+                            if (candidates.length === 0) {
+                                instance.write("\x07");
+                            } else if (candidates.length === 1) {
+                                const full = dirPrefix
+                                    ? `${dirPrefix}/${candidates[0]}`
+                                    : candidates[0];
+                                renderInputLine(replaceCurrentToken(input, full));
+                            } else {
+                                const common = lcp(candidates);
+                                const next =
+                                    common.length > prefix.length
+                                        ? dirPrefix
+                                            ? `${dirPrefix}/${common}`
+                                            : common
+                                        : null;
+                                if (next) {
+                                    renderInputLine(replaceCurrentToken(input, next));
+                                } else {
+                                    instance.write("\r\n");
+                                    candidates.forEach((m) => instance.writeln(m));
+                                    instance.write(promptRef.current + lineRef.current);
+                                }
+                            }
+                        } else {
+                            instance.write("\x07");
+                        }
+                        continue;
+                    }
+
+                    const { prefix, candidates, dirPrefix } = completePathToken(currentToken);
+                    if (candidates.length === 0) {
+                        instance.write("\x07");
+                    } else if (candidates.length === 1) {
+                        const full = dirPrefix ? `${dirPrefix}/${candidates[0]}` : candidates[0];
+                        renderInputLine(replaceCurrentToken(input, full));
+                    } else {
+                        const common = lcp(candidates);
+                        const next =
+                            common.length > prefix.length
+                                ? dirPrefix
+                                    ? `${dirPrefix}/${common}`
+                                    : common
+                                : null;
+                        if (next) {
+                            renderInputLine(replaceCurrentToken(input, next));
+                        } else {
+                            instance.write("\r\n");
+                            candidates.forEach((m) => instance.writeln(m));
+                            instance.write(promptRef.current + lineRef.current);
+                        }
+                    }
+                    continue;
                 }
             }
         });
 
-        return () => onDataDisp.dispose();
-    }, [instance, runCommand, writePrompt, printLines]);
+        return () => disp.dispose();
+    }, [instance, history, pushHistory, runCommand, writePrompt]);
 
     useEffect(() => {
         if (!instance) return;
@@ -326,6 +598,7 @@ export const Console: React.FC = () => {
             const queued = state.pendingCmd;
             dispatch({ type: "CLEAR_QUEUE" });
             if (!queued) return;
+            pushHistoryIfNeeded(queued);
             await runCommand(queued);
             writePrompt();
         })();
