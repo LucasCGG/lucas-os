@@ -203,9 +203,29 @@ export class MiniVim {
     // ---- keys ----
     _await: "g" | null = null;
 
-    // TODO: Change these ifs to swich cases, was to dumb and lazy to do this first go so here we are o_O
+    /**
+     *  Motions
+     *  h    Left
+     *  j    Down
+     *  k    Up
+     *  l    Right
+     *  w    Move forward to the beginning of the next word
+     *  }    Jump to the next paragraph
+     *  $    Go to the end of the line
+     */
+
+    /**
+     * Operators
+     * y    Yank text(copy)
+     * d    Delete text and save to register
+     * c    Delet text, save to register, and start insert mode
+     */
+
+
+
     onKey(d: string) {
         // arrows
+        console.debug("onKey d", d);
         if (d === "\x1b[A") {
             this.cy--;
             this.clamp();
@@ -340,8 +360,8 @@ export class MiniVim {
             return this.render();
         }
         if (d === "O") {
-            this.cy = Math.max(0, this.cy - 1);
             this.newline();
+            this.cy = Math.max(0, this.cy - 1);
             this.mode = "INSERT";
             this.ensureVisible();
             return this.render();

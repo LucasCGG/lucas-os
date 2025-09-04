@@ -12,7 +12,7 @@ export type FileSystemNode = {
 
 type FileSystemState = {
     tree: Record<string, FileSystemNode>;
-    currentPath: string[]; 
+    currentPath: string[];
 
     pathString: () => string;
     resolvePath: (pathArr: string[]) => FileSystemNode | null;
@@ -33,40 +33,27 @@ function initialTree(): Record<string, FileSystemNode> {
         "~": {
             type: "directory",
             children: {
-                
                 apps: {
                     type: "directory",
                     children: {
                         about: { type: "file", content: "About App" },
                         projects: { type: "file", content: "Projects App" },
                         terminal: { type: "file", content: "Terminal App" },
-                        PdfViewer: { type: "file", content: "Pdf Viewer App" }, 
+                        PdfViewer: { type: "file", content: "Pdf Viewer App" },
                     },
                 },
-               
+
                 Desktop: {
                     type: "directory",
                     children: {
-                        "Open My CV.desktop": {
-                            type: "file",
-                            mime: "application/x-desktop",
-                            content: `[Desktop Entry]
-Type=Application
-Name=Open My CV
-Exec=openfile ~/Documents/CV/CV_Lucas_Colaco.pdf
-Comment=Shortcut to Lucas' CV
-`,
-                        },
                         "README.txt": {
                             type: "file",
                             mime: "text/plain",
-                            content:
-                                "Drag files here? Not supported (yet). Try `ls`, `cd Desktop`, then `cat README.txt` 😉",
+                            src: "/files/README.md",
                         },
                     },
                 },
 
-                
                 Documents: {
                     type: "directory",
                     children: {
@@ -144,7 +131,6 @@ Comment=Shortcut to Lucas' CV
                     },
                 },
 
-                
                 ".config": {
                     type: "directory",
                     hidden: true,
