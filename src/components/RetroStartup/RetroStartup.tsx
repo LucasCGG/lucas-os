@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, type CSSProperties } from "react";
+import { AppIcon } from "../AppIcon";
 
 export const RetroStart = ({
+    logoDelay = 0.2,
     glowDuration = 3.2,
     pulseDuration = 1.7,
     flickerDuration = 2.7,
@@ -45,6 +47,7 @@ export const RetroStart = ({
         "--rcrt-scanline-size": `${scanlineSizePx}px`,
         "--rcrt-chromatic-shift": `${chromaticShiftPx}px`,
         "--rcrt-blur": blur,
+        "--rcrt-logo-delay": `${logoDelay}s`,
     };
 
     return (
@@ -58,6 +61,8 @@ export const RetroStart = ({
             title="Click or press Space to replay"
         >
             <div className="rcrt__stage">
+                <AppIcon size="auto" icon="icn-logo-simple" className="rcrt__logo" />
+
                 <div className="rcrt__chromatic" />
                 <div className="rcrt__whiteout" />
                 <div className="rcrt__flash" />
@@ -194,6 +199,50 @@ export const RetroStart = ({
           .rcrt.rcrt--play .rcrt__chromatic::after{ animation: rcrt-expand 1s ease-out forwards !important; }
           .rcrt.rcrt--play .rcrt__whiteout{ animation: rcrt-fill 1s ease-out forwards !important; }
           .rcrt__flash{ display:none; }
+        }
+
+        .rcrt__logo {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) scale(0.6);
+          max-width: 70%;
+          opacity: 0;
+          filter: drop-shadow(0 0 10px rgba(255,255,255,0.6));
+          animation: rcrt-logo-fade var(--rcrt-glow-duration + 5) ease-out forwards;
+          animation-delay: var(--rcrt-logo-delay);
+          mix-blend-mode: screen;
+          pointer-events: none;
+          image-rendering: crisp-edges;
+        }
+
+        /* Logo fade-in synced with glow, but delayed */
+        @keyframes rcrt-logo-fade {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.4); filter: blur(4px) brightness(2); }
+          30%  { opacity: 0.2; transform: translate(-50%, -50%) scale(0.55); }
+          60%  { opacity: 0.7; transform: translate(-50%, -50%) scale(0.65); }
+          100% { opacity: 1; transform: translate(-50%, -50%) scale(0.6); filter: blur(0px) brightness(1); }
+        }
+
+        /* Logo flicker starts only after it's visible */
+        .rcrt--play .rcrt__logo {
+          animation:
+            rcrt-logo-fade var(--rcrt-glow-duration) ease-out forwards,
+            rcrt-logo-flicker 2.5s steps(20, end) infinite;
+          animation-delay: var(--rcrt-logo-delay), calc(var(--rcrt-logo-delay) + var(--rcrt-glow-duration));
+        }
+
+        @keyframes rcrt-logo-flicker {
+          0%,100% { opacity: 1; }
+          10% { opacity: 0.85; }
+          15% { opacity: 1; }
+          20% { opacity: 0.9; }
+          30% { opacity: 1; }
+          40% { opacity: 0.8; }
+          50% { opacity: 1; }
+          65% { opacity: 0.92; }
+          75% { opacity: 1; }
+          85% { opacity: 0.88; }
         }
       `}</style>
         </div>

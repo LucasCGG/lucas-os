@@ -57,7 +57,7 @@ const MailObject = ({ sender, subject, text }: mailEntity) => {
         setValue(e.target.value);
     };
 
-    const resend = new Resend("re_124123124");
+    const resend = new Resend("re_dW8ohBHd_DwarrgCsQunL4rD2eHbeJL8R");
 
     const sendMail = () => {
         console.debug("Test");
@@ -99,8 +99,8 @@ const MailObject = ({ sender, subject, text }: mailEntity) => {
 
                 {!sender && !subject && (
                     <div className="flex flex-row gap-2">
-                        <AppButton onClick={() => sendMail()} text="Save to Draft" />
-                        <AppButton onClick={() => {}} text="Send" />
+                        <AppButton onClick={() => {}} text="Save to Draft" />
+                        <AppButton onClick={() => sendMail()} text="Send" />
                     </div>
                 )}
             </div>

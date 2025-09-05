@@ -27,7 +27,7 @@ const DockClock = () => {
 
     const { hours, minutes } = useMemo(() => {
         return {
-            hours: now.toLocaleString([], { hour: "2-digit", hour12: false }),
+            hours: now.getHours(),
             minutes: now.getMinutes().toString().padStart(2, "0"),
         };
     }, [now]);

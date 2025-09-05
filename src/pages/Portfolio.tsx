@@ -34,7 +34,7 @@ export const Portfolio = () => {
 
     useEffect(() => {
         if (hasVisited && showStarter) {
-            const timer = setTimeout(() => setShowStarter(false), 1500);
+            const timer = setTimeout(() => setShowStarter(false), 2500);
             return () => clearTimeout(timer);
         }
     }, [hasVisited, showStarter]);
