@@ -61,7 +61,7 @@ export const RetroStart = ({
             title="Click or press Space to replay"
         >
             <div className="rcrt__stage">
-                <AppIcon size="auto" icon="icn-logo-simple" className="rcrt__logo" />
+                <AppIcon size="auto" icon="icn-logo-simple" className="rcrt__logo max-h-96" />
 
                 <div className="rcrt__chromatic" />
                 <div className="rcrt__whiteout" />

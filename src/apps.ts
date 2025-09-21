@@ -1,3 +1,4 @@
+import { SwitcheruGameBecauseNamingConventions } from "./apps/2048Replica";
 import { AboutApp } from "./apps/AboutApp";
 import { Browser } from "./apps/Browser";
 import { Console } from "./apps/Console";
@@ -46,4 +47,12 @@ export const appsRegistry = {
         defaultSize: { width: 700, height: 500 },
         pinned: false,
     },
+    SwitcheruGameBecauseNamingConventions: {
+        id: "SwitcheruGameBecauseNamingConventions",
+        title: "2048",
+        component: SwitcheruGameBecauseNamingConventions,
+        icon: "icn-2048-app",
+        defaultSize: {width: 300, height:400},
+        pinned: true,
+    }
 };
