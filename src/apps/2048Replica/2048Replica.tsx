@@ -163,6 +163,16 @@ function reducer(state: State, action: Action): State {
     }
 }
 
+const FIELD_COLORS = {
+    2: "#eee4dal",
+    4: "#ebd8b6",
+    8: "#f2b075",
+    16: "#f5905c",
+    32: "#f77f64",
+    64: "#f76544",
+    128: "#f1d267",
+};
+
 export const SwitcheruGameBecauseNamingConventions = () => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -328,7 +338,14 @@ export const SwitcheruGameBecauseNamingConventions = () => {
                 ctx.strokeRect(cellX, cellY, cellSize, cellSize);
 
                 if (val > 0) {
-                    ctx.fillStyle = "white";
+                    let parsedColor: string;
+                    if (val >= 128) {
+                        parsedColor = FIELD_COLORS[128];
+                    } else {
+                        parsedColor = FIELD_COLORS[val];
+                    }
+
+                    ctx.fillStyle = parsedColor ?? "white";
                     ctx.fillRect(
                         cellX + padding / 2,
                         cellY + padding / 2,
@@ -340,7 +357,11 @@ export const SwitcheruGameBecauseNamingConventions = () => {
                     ctx.font = `${cellSize / 2}px Arial`;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
-                    ctx.fillText(val.toString(), cellX + cellSize / 2, cellY + cellSize / 2);
+                    ctx.fillText(
+                        parsedColor + val.toString(),
+                        cellX + cellSize / 2,
+                        cellY + cellSize / 2
+                    );
                 }
             });
         });

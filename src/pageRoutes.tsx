@@ -1,16 +1,27 @@
 import { lazy } from "react";
 import type { ReactElement } from "react";
-import { Portfolio } from "./pages";
-import { WallyCartDataDeletion, WallyCartPrivacyPolicy } from "./pages/WallyCart";
+import { DeptCollector, Portfolio, WallyCartDataDeletion, WallyCartLayout, WallyCartPrivacyPolicy } from "./pages";
+import { createBrowserRouter } from "react-router-dom";
 // const DataDeletion = lazy(() => import("./pages/DataDeletion"));
 
 export type PageRoute = {
-    path: string;
-    element: ReactElement;
+  path: string;
+  element: ReactElement;
 };
 
-export const pageRoutes: PageRoute[] = [
-    { path: "/", element: <Portfolio /> },
-    { path: "/WallyCart/privacy-policy", element: <WallyCartPrivacyPolicy /> },
-    { path: "/WallyCart/data-deletion", element: <WallyCartDataDeletion /> },
-];
+export const router = createBrowserRouter([
+  { path: "/", element: <Portfolio /> },
+  {
+    path: "/WallyCart",
+    element: <WallyCartLayout />,
+    children: [
+      { path: "privacy-policy", element: <WallyCartPrivacyPolicy /> },
+      { path: "data-deletion", element: <WallyCartDataDeletion /> },
+    ],
+  },
+  {
+    path: "/dept-collector",
+    element: <DeptCollector />
+  }
+]);
+
