@@ -16,7 +16,7 @@ export const AppButton = ({
   text,
   size = "md",
 }: AppButtonProps) => {
-  const { icon: iconSize, text: textSize, gap, px, py } = buttonSizeMap[size];
+  const { icon: iconSize, text: textSize} = buttonSizeMap[size];
 
   return (
     <button onClick={onClick} className="retro-3d btn-retro">
