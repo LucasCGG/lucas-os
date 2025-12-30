@@ -1,192 +1,215 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AppButton, AppIcon, AppIconButton, Email } from "../../components";
-import { Resend } from "resend";
+import { AppButton, AppIcon, AppIconButton } from "../../components";
+import emailjs from "@emailjs/browser";
 
-type mailItem = {
+type MailItem = {
     sender: string;
     subject: string;
     text: string;
-    onClick?: () => void;
-    className?: string;
 };
 
-type mailEntity = {
+type MailEntity = {
     sender?: string;
     subject?: string;
     text?: string;
-    onClick?: () => void;
-    className?: string;
 };
 
-const MailItem = ({ sender, subject, text, onClick, className }: mailItem) => {
+const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID as string;
+const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID as string;
+const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY as string;
+
+if (!serviceId || !templateId || !publicKey) {
+    throw new Error("Missing EmailJS environment variables");
+}
+
+emailjs.init(publicKey);
+
+const MailItemComponent = ({ sender, subject, text }: MailItem) => {
     return (
-        <div className={`${className} h-fit w-full px-2 py-4`} onClick={() => onClick?.()}>
+        <div className="h-fit w-full border-b-2 border-sidebar px-2 py-4">
             <p className="font-semibold">{sender}</p>
-            <p className="line-clamp-1 text-ellipsis font-bold">{subject}</p>
-            <p className="line-clamp-1 text-ellipsis font-light">{text}</p>
+            <p className="line-clamp-1 font-bold">{subject}</p>
+            <p className="line-clamp-1 font-light">{text}</p>
         </div>
     );
 };
 
-const MailObject = ({ sender, subject, text }: mailEntity) => {
-    const [value, setValue] = useState<string>(text || "");
+const MailObject = ({ sender, subject, text }: MailEntity) => {
+    const [from, setFrom] = useState(sender ?? "");
+    const [mailSubject, setMailSubject] = useState(subject ?? "");
+    const [message, setMessage] = useState(text ?? "");
+    const [sending, setSending] = useState(false);
+
     const refTextArea = useRef<HTMLTextAreaElement | null>(null);
 
     useEffect(() => {
-        setValue(text || "");
-    }, [text]);
+        setFrom(sender ?? "");
+        setMailSubject(subject ?? "");
+        setMessage(text ?? "");
+    }, [sender, subject, text]);
 
-    const resizeTextArea = () => {
+    useEffect(() => {
         const el = refTextArea.current;
         if (!el) return;
 
         el.style.height = "auto";
+        el.style.height = `${el.scrollHeight}px`;
+    }, [message]);
 
-        const parent = el.parentElement;
-        const max = parent ? parent.clientHeight : Infinity;
+    const sendMail = async () => {
+        if (!from || !mailSubject || !message) {
+            alert("Please fill out all fields");
+            return;
+        }
 
-        const next = Math.min(el.scrollHeight, max);
-        el.style.height = `${next}px`;
+        try {
+            setSending(true);
 
-        el.style.overflowY = el.scrollHeight > max ? "auto" : "hidden";
-    };
+            await emailjs.send(serviceId, templateId, {
+                from_email: from,
+                from_name: from,
+                to_email: "colaco.lucasgabriel@gmail.com",
+                subject: mailSubject,
+                message,
+            });
 
-    useEffect(resizeTextArea, [value]);
+            alert("Message sent successfully");
 
-    const onChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setValue(e.target.value);
-    };
-
-    const resend = new Resend("re_dW8ohBHd_DwarrgCsQunL4rD2eHbeJL8R");
-
-    const sendMail = () => {
-        console.debug("Test");
-        resend.emails.send({
-            from: "colaco.lucasgabriel@gmail.com",
-            to: "colaco.lucasgabriel@gmail.com",
-            subject: "Test Sending mail",
-            react: <Email url="lucascolaco.com" />,
-        });
+            setFrom("");
+            setMailSubject("");
+            setMessage("");
+        } catch (err) {
+            console.error(err);
+            alert("Failed to send message");
+        } finally {
+            setSending(false);
+        }
     };
 
     return (
-        <div className="flex h-full min-h-0 w-full flex-col px-2 py-4">
-            <div className="shrink-0 border-b-2 border-sidebar pb-2">
-                <div className="flex gap-1">
+        <div className="flex h-full w-full flex-col px-4 py-4">
+            <div className="space-y-2 border-b-2 border-sidebar pb-4">
+                <div className="flex items-center gap-2">
                     <p className="font-semibold">To:</p>
                     <p>colaco.lucasgabriel@gmail.com</p>
                 </div>
-                <div className="flex gap-1">
+
+                <div className="flex items-center gap-2">
                     <p className="font-semibold">From:</p>
-                    {sender ? sender : <p>Enter your Email</p>}
+                    <input
+                        type="email"
+                        value={from}
+                        onChange={(e) => setFrom(e.target.value)}
+                        placeholder="your@email.com"
+                        className="flex-1 bg-transparent outline-none"
+                    />
                 </div>
-                <div className="flex gap-1">
-                    <p className="font-semibold">Subject: </p>
-                    {subject ? subject : <p>Enter the Subject</p>}
+
+                <div className="flex items-center gap-2">
+                    <p className="font-semibold">Subject:</p>
+                    <input
+                        type="text"
+                        value={mailSubject}
+                        onChange={(e) => setMailSubject(e.target.value)}
+                        placeholder="Subject"
+                        className="flex-1 bg-transparent outline-none"
+                    />
                 </div>
             </div>
 
-            <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden py-2">
+            <div className="flex flex-1 flex-col gap-4 py-4">
                 <textarea
                     ref={refTextArea}
-                    className="box-border h-auto w-full resize-none border-none bg-inherit outline-none"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Type your message here..."
+                    className="w-full resize-none bg-transparent outline-none"
                     rows={1}
-                    placeholder="Type your Message in here :D"
-                    onChange={onChange}
-                    value={value}
-                    style={{ maxHeight: "100%" }}
                 />
 
-                {!sender && !subject && (
-                    <div className="flex flex-row gap-2">
-                        <AppButton onClick={() => {}} text="Save to Draft" />
-                        <AppButton onClick={() => sendMail()} text="Send" />
-                    </div>
-                )}
+                <div className="flex gap-2">
+                    <AppButton
+                        onClick={sendMail}
+                        text={sending ? "Sending..." : "Send"}
+                        disabled={sending}
+                    />
+                </div>
             </div>
         </div>
     );
 };
 
-const initialMailList: mailItem[] = [
+const initialMailList: MailItem[] = [
     {
         sender: "Alice Johnson",
         subject: "Welcome to MailApp!",
-        text: "We're excited to have you on board. Let us know if you need any help.",
+        text: "We're excited to have you on board.",
     },
     {
         sender: "Bob Smith",
         subject: "Meeting Reminder",
-        text: "Don't forget about our meeting tomorrow at 10am.",
+        text: "Don't forget about our meeting tomorrow.",
     },
     {
         sender: "Carol Lee",
         subject: "Invoice Attached",
-        text: "Please find the invoice attached for your recent purchase.",
+        text: "Please find the invoice attached.",
     },
 ];
 
-const newMailKey = "compose-mail";
+const NEW_MAIL_KEY = "compose";
 
 export const MailApp = () => {
-    const [openMail, setOpenMail] = useState<string | null>(null);
+    const [openMail, setOpenMail] = useState<string | null>(NEW_MAIL_KEY);
 
-    const renderOpenMail = useCallback((mail?: mailItem) => {
+    const renderOpenMail = useCallback((mail?: MailItem) => {
         return (
-            <div className="min-w-80 flex-shrink-0 flex-grow overflow-y-auto p-4">
+            <div className="min-w-80 flex-grow overflow-y-auto">
                 <MailObject sender={mail?.sender} subject={mail?.subject} text={mail?.text} />
             </div>
         );
     }, []);
 
     return (
-        <div className="flex h-full w-full flex-col gap-0 bg-[#F5E4C0] px-4 pb-16">
+        <div className="flex h-full w-full flex-col bg-[#F5E4C0] px-4 pb-16">
             <div className="flex justify-between border-b-2 border-sidebar py-2">
                 <div className="flex gap-4">
                     <AppIconButton
                         icon="icn-envelope"
                         variant="ghost"
                         size="md"
-                        className="cursor-hand text-sidebar"
-                        onClick={() => setOpenMail(newMailKey)}
+                        className="text-sidebar"
+                        onClick={() => setOpenMail(NEW_MAIL_KEY)}
                     />
                     <AppIcon icon="icn-pen" className="text-sidebar" />
                     <AppIcon icon="icn-trash-bin" className="text-sidebar" />
                 </div>
             </div>
-            <div className="flex h-full gap-0">
-                <div className="flex-col gap-4 pr-4 pt-2">
+
+            <div className="flex h-full">
+                <div className="space-y-2 pr-4 pt-4">
                     <p>Inbox</p>
                     <p>Sent</p>
                     <p>Spam</p>
                     <p>Trash</p>
                 </div>
 
-                <div className="flex-shrink-1 h-full overflow-y-auto border-x-2 border-sidebar">
+                <div className="w-80 overflow-y-auto border-x-2 border-sidebar">
                     {initialMailList.map((mail) => (
-                        <MailItem
+                        <div
                             key={mail.sender + mail.subject}
-                            sender={mail.sender}
-                            subject={mail.subject}
-                            text={mail.text}
                             onClick={() => setOpenMail(mail.sender + mail.subject)}
-                            className="border-b-2 border-sidebar"
-                        />
+                        >
+                            <MailItemComponent {...mail} />
+                        </div>
                     ))}
                 </div>
 
-                {openMail &&
-                    (() => {
-                        const newMail = openMail === newMailKey;
-                        if (newMail) {
-                            return renderOpenMail();
-                        }
-                        const mail = initialMailList.find((m) => m.sender + m.subject === openMail);
-                        if (mail) {
-                            return renderOpenMail(mail);
-                        }
-                        return;
-                    })()}
+                {openMail === NEW_MAIL_KEY
+                    ? renderOpenMail()
+                    : renderOpenMail(
+                          initialMailList.find((m) => m.sender + m.subject === openMail)
+                      )}
             </div>
         </div>
     );
