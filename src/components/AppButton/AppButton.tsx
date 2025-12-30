@@ -7,6 +7,7 @@ interface AppButtonProps {
   iconEnd?: string;
   text?: string;
   size?: ButtonSize;
+  disabled?: boolean;
 }
 
 export const AppButton = ({
@@ -15,11 +16,12 @@ export const AppButton = ({
   iconEnd,
   text,
   size = "md",
+  disabled,
 }: AppButtonProps) => {
   const { icon: iconSize, text: textSize, gap, px, py } = buttonSizeMap[size];
 
   return (
-    <button onClick={onClick} className="retro-3d btn-retro">
+    <button onClick={onClick} className="retro-3d btn-retro" disabled={disabled}>
       {iconStart && <AppIcon icon={iconStart} size={iconSize} />}
       {text && <span>{text}</span>}
       {iconEnd && <AppIcon icon={iconEnd} size={iconSize} />}

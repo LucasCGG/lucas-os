@@ -1,6 +1,6 @@
 import { Html, Button } from "@react-email/components";
 
-export const Email = (props) => {
+export const Email = (props: any) => {
     const { url } = props;
 
     return (
