@@ -1,4 +1,3 @@
-import { lazy } from "react";
 import type { ReactElement } from "react";
 import { DeptCollector, Portfolio, WallyCartDataDeletion, WallyCartLayout, WallyCartPrivacyPolicy } from "./pages";
 import { createBrowserRouter } from "react-router-dom";

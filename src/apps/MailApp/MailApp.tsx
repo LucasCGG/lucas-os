@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppButton, AppIcon, AppIconButton } from "../../components";
 import emailjs from "@emailjs/browser";
+import toast from "react-hot-toast";
+import { ErrorToast } from "../../components/AppToast/AppToast";
 
 type MailItem = {
     sender: string;
@@ -58,7 +60,7 @@ const MailObject = ({ sender, subject, text }: MailEntity) => {
 
     const sendMail = async () => {
         if (!from || !mailSubject || !message) {
-            alert("Please fill out all fields");
+            ErrorToast({ message: "Please fill out all fields" });
             return;
         }
 
@@ -73,14 +75,14 @@ const MailObject = ({ sender, subject, text }: MailEntity) => {
                 message,
             });
 
-            alert("Message sent successfully");
+            toast.success("Message sent successfully");
 
             setFrom("");
             setMailSubject("");
             setMessage("");
         } catch (err) {
             console.error(err);
-            alert("Failed to send message");
+            toast.error("Failed to send message");
         } finally {
             setSending(false);
         }
