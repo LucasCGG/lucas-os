@@ -1,4 +1,3 @@
-import { lazy } from "react";
 import type { ReactElement } from "react";
 import { Portfolio } from "./pages";
 import { WallyCartDataDeletion, WallyCartPrivacyPolicy } from "./pages/WallyCart";
