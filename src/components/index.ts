@@ -3,7 +3,6 @@ export * from "./AppCustomWaitCursor";
 export * from "./AppIcon";
 export * from "./AppIconButton";
 export * from "./AppTruncatingTooltipText";
-export * from "./Desktop";
 export * from "./Dock";
 export * from "./Window";
 export * from "./WindowManager";

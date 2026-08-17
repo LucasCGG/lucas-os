@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { AppCustomWaitCursor, Desktop } from "../components";
+import { AppCustomWaitCursor } from "../components";
+import { Desktop, Mobile } from "../layout";
 import { RetroStart } from "../components/RetroStartup/RetroStartup";
 import useDynamicTabTitle from "../utils/useDynamicTitle";
 
@@ -46,7 +47,7 @@ export const Portfolio = () => {
                 className="flex flex-col items-center justify-center bg-terminal_background"
             >
                 <h3 className="w-fit text-terminal_foreground">
-                    For the currently best Experience, please use a Desktop
+                    For the best Experience, please use a Desktop
                 </h3>
                 <p className="w-fit text-terminal_foreground">Enjoy ;P</p>
             </div>
@@ -58,8 +59,12 @@ export const Portfolio = () => {
     return (
         <>
             <AppCustomWaitCursor />
-            <div className="h-screen w-screen overflow-hidden">
+            <div className="hidden h-full w-full md:block">
                 <Desktop />
+            </div>
+
+            <div className="block h-dvh w-full md:hidden">
+                <Mobile />
             </div>
         </>
     );
