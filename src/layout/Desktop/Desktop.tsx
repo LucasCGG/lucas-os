@@ -21,7 +21,7 @@ export const Desktop = () => {
             >
                 {/* FX overlay for ghost animations */}
                 <div id="fx-layer" className="pointer-events-none absolute inset-0 z-[99999]" />
-                <WindowManager />
+                <WindowManager defaultApp="about" />
             </div>
         </div>
     );

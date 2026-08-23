@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { AppCustomWaitCursor } from "../components";
 import { Desktop, Mobile } from "../layout";
 import { RetroStart } from "../components/RetroStartup/RetroStartup";
-import useDynamicTabTitle from "../utils/useDynamicTitle";
+import { useDynamicTabTitle, useIsMobile } from "../hooks";
 
 export const Portfolio = () => {
     useDynamicTabTitle();
+
+    const isMobile = useIsMobile();
+    console.debug("isMobile", isMobile);
 
     const initialHasVisited = useMemo(
         () =>
@@ -59,13 +62,17 @@ export const Portfolio = () => {
     return (
         <>
             <AppCustomWaitCursor />
-            <div className="hidden h-full w-full md:block">
-                <Desktop />
-            </div>
+            {!isMobile && (
+                <div className="block h-full w-full">
+                    <Desktop />
+                </div>
+            )}
 
-            <div className="block h-dvh w-full md:hidden">
-                <Mobile />
-            </div>
+            {isMobile && (
+                <div className="block h-dvh w-full">
+                    <Mobile />
+                </div>
+            )}
         </>
     );
 };

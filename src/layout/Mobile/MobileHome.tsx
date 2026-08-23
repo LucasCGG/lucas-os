@@ -18,7 +18,7 @@ export const MobileHome = () => {
                         onClick={() => openApp(app.id)}
                         className="flex flex-col items-center gap-1"
                     >
-                        <AppIcon icon={app.icon} size="2xl" className="drop-shadow-md" />
+                        <AppIcon icon={app.icon} size="3xl" className="drop-shadow-md" />
                         <span className="w-full truncate text-center text-xs text-[#FFF4D6]">
                             {app.title}
                         </span>

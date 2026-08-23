@@ -7,6 +7,7 @@ interface AppIconButtonProps {
     size?: ButtonSize;
     variant?: ButtonVariant;
     className?: string;
+    disabled?: boolean;
 }
 
 export const AppIconButton = ({
@@ -15,12 +16,17 @@ export const AppIconButton = ({
     size = "sm",
     variant = "solid",
     className,
+    disabled,
 }: AppIconButtonProps) => {
     const { icon: iconSize } = buttonSizeMap[size];
     const { base: base } = buttonVariantMap[variant];
 
     return (
-        <button onClick={onClick} className={`cursor-hand ${base} aspect-square ${className}`}>
+        <button
+            onClick={onClick}
+            className={`cursor-hand ${base} aspect-square ${className}`}
+            disabled={disabled}
+        >
             {icon && <AppIcon icon={icon} size={iconSize} />}
         </button>
     );

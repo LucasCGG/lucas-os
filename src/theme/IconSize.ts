@@ -7,6 +7,7 @@ export const iconSizeMap = {
     lg: "w-7 h-7",
     xl: "w-8 h-8",
     "2xl": "w-10 h-10",
+    "3xl": "w-12 h-12",
     full: "w-full",
 } as const;
 

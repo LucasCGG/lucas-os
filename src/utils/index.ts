@@ -1,3 +1,3 @@
-export * from "./useDynamicTitle";
+export * from "../hooks/";
 export * from "./loaderAnimations";
 export * from "./commands";

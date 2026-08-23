@@ -105,11 +105,25 @@ const GhostWindow: FC<GhostProps> = ({ appId, target, source, zIndex, onDone }) 
     );
 };
 
-export const WindowManager = () => {
+interface WindowManagerProps {
+    defaultApp?: string;
+}
+export const WindowManager = ({ defaultApp }: WindowManagerProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const fxLayer = useFxLayer();
 
-    const { openWindows, closeApp, bringToFront, updateWindow } = useWindowStore();
+    const { openApp, openWindows, closeApp, bringToFront, updateWindow } = useWindowStore();
+
+    useEffect(() => {
+        if (defaultApp && openApp) {
+            openApp(defaultApp);
+        }
+        return () => {
+            if (defaultApp && closeApp) {
+                closeApp(defaultApp);
+            }
+        };
+    }, [defaultApp]);
 
     useEffect(() => {
         if (!containerRef.current) return;
