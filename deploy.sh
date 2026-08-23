@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-APP_DIR="/home/lucascolaco/lucas-os"   
+APP_DIR="/home/lucascolaco/lucas-os"
 BUILD_DIR="$APP_DIR/dist"
 DEPLOY_DIR="/var/www/lucascolaco"
-BRANCH="main"  
+BRANCH="master"
 USER="lucascolaco"
 GROUP="www-data"
 
