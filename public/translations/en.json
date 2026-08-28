@@ -1,0 +1,183 @@
+{
+    "common": {
+        "button": {
+            "add": "Add",
+            "save": "Save",
+            "cancel": "Cancel",
+            "delete": "Delete"
+        },
+        "label": {
+            "loading": "Loading…",
+            "empty": "Nothing here yet"
+        },
+        "input": {
+            "email": {
+                "label": "Email",
+                "placeholder": "you@example.com",
+                "error": "Please enter a valid email"
+            },
+            "search": {
+                "label": "Search",
+                "placeholder": "Type to search…"
+            }
+        }
+    },
+    "com": {
+        "window": {
+            "close": "Close",
+            "minimize": "Minimize",
+            "maximize": "Maximize"
+        },
+        "dock": {
+            "tooltip": "Open {{app}}"
+        },
+        "timeline": {
+            "presentLabel": "Present"
+        }
+    },
+    "app": {
+        "about": {
+            "title": { "type": "text", "label": "Window title", "value": "About Me" },
+            "greetingPre": {
+                "type": "text",
+                "label": "Greeting prefix",
+                "value": "Hey there, I'm"
+            },
+            "greetingName": { "type": "text", "label": "Greeting name", "value": "Lucas" },
+            "intro": {
+                "type": "richtext",
+                "label": "Intro",
+                "value": "I love bringing ideas to life with <hl>code</hl> and <hl>design</hl> — whether it's building smooth frontend interfaces, animating with Rive, or hacking together backend logic. I've touched a bit of <hl>everything</hl>, and I'm always up for a new challenge. Whatever you throw at me, I'll figure it out (and probably already have something in mind for it ;P)"
+            },
+            "skillsHeading": { "type": "text", "label": "Skills heading", "value": "My Skills" },
+            "skills": {
+                "type": "list",
+                "label": "Skills",
+                "value": [
+                    "HTML",
+                    "CSS",
+                    "JS",
+                    "React",
+                    "C#",
+                    "WordPress",
+                    "Figma",
+                    "Rive",
+                    "Webflow"
+                ]
+            },
+            "timeline": {
+                "type": "timeline",
+                "label": "Timeline",
+                "value": [
+                    {
+                        "year": "2021",
+                        "title": "Started WISS School",
+                        "sub": "Began my EFZ program in software development."
+                    },
+                    {
+                        "year": "2023",
+                        "title": "Apprenticeship @ Expertshare AG",
+                        "sub": "Worked on <hl>SaaS platforms SD</hl>, UI/UX, and web apps."
+                    },
+                    {
+                        "year": "2025",
+                        "title": "EFZ Graduation & Awards",
+                        "sub": "Graduated with <b>5.6 Grade</b>, <hl>ZLI Award</hl> & <hl>Best in Rank</hl>."
+                    },
+                    {
+                        "year": "Present",
+                        "title": "Lead Frontend Dev & CS Student",
+                        "sub": "Leading frontend at <hl>expertshare AG</hl> while studying <hl>Computer Science</hl> at ZHAW."
+                    }
+                ]
+            }
+        },
+
+        "mail": {
+            "title": { "type": "text", "label": "Window title", "value": "Mail" },
+            "composeButton": { "type": "text", "label": "Compose button", "value": "Compose" },
+            "sendButton": { "type": "text", "label": "Send button", "value": "Send" },
+            "sendingButton": { "type": "text", "label": "Sending button", "value": "Sending…" },
+            "discardButton": { "type": "text", "label": "Discard button", "value": "Discard" },
+            "recipient": {
+                "type": "text",
+                "label": "Recipient email",
+                "value": "colaco.lucasgabriel@gmail.com"
+            },
+            "seed": {
+                "type": "maillist",
+                "label": "Inbox seed messages",
+                "value": [
+                    {
+                        "sender": "Alice Johnson",
+                        "subject": "Welcome to MailApp!",
+                        "text": "We're excited to have you on board."
+                    },
+                    {
+                        "sender": "Bob Smith",
+                        "subject": "Meeting Reminder",
+                        "text": "Don't forget about our meeting tomorrow."
+                    },
+                    {
+                        "sender": "Carol Lee",
+                        "subject": "Invoice Attached",
+                        "text": "Please find the invoice attached."
+                    }
+                ]
+            },
+            "emptyState": {
+                "type": "longtext",
+                "label": "Empty state",
+                "value": "Select a message, or press the pen to write a new one."
+            },
+            "mobile": {
+                "newMessage": {
+                    "type": "text",
+                    "label": "Header — composing",
+                    "value": "NEW MESSAGE"
+                },
+                "message": { "type": "text", "label": "Header — reading", "value": "MESSAGE" }
+            },
+            "folders": {
+                "inbox": { "type": "text", "label": "Folder — Inbox", "value": "Inbox" },
+                "sent": { "type": "text", "label": "Folder — Sent", "value": "Sent" },
+                "spam": { "type": "text", "label": "Folder — Spam", "value": "Spam" },
+                "trash": { "type": "text", "label": "Folder — Trash", "value": "Trash" }
+            },
+            "compose": {
+                "to": {
+                    "label": { "type": "text", "label": "To — label", "value": "To" },
+                    "placeholder": {
+                        "type": "text",
+                        "label": "To — placeholder",
+                        "value": "recipient@example.com"
+                    }
+                },
+                "from": {
+                    "label": { "type": "text", "label": "From — label", "value": "From" },
+                    "placeholder": {
+                        "type": "text",
+                        "label": "From — placeholder",
+                        "value": "your@email.com"
+                    }
+                },
+                "subject": {
+                    "label": { "type": "text", "label": "Subject — label", "value": "Subject" },
+                    "placeholder": {
+                        "type": "text",
+                        "label": "Subject — placeholder",
+                        "value": "What's this about?"
+                    }
+                },
+                "body": {
+                    "label": { "type": "text", "label": "Message — label", "value": "Message" },
+                    "placeholder": {
+                        "type": "text",
+                        "label": "Message — placeholder",
+                        "value": "Write your message…"
+                    }
+                }
+            }
+        }
+    }
+}

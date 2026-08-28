@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppButton, AppIcon, AppIconButton } from "../../components";
+import { AppEditable } from "../../components/cms";
+import { useTrans } from "../../hooks/useTrans";
 import emailjs from "@emailjs/browser";
 import toast from "react-hot-toast";
 import { ErrorToast } from "../../components/AppToast/AppToast";
@@ -26,6 +28,15 @@ if (!serviceId || !templateId || !publicKey) {
 }
 
 emailjs.init(publicKey);
+
+const RECIPIENT_EMAIL = "colaco.lucasgabriel@gmail.com";
+
+const FOLDERS: { key: string; labelId: string }[] = [
+    { key: "INBOX", labelId: "app.mail.folders.inbox" },
+    { key: "SENT", labelId: "app.mail.folders.sent" },
+    { key: "SPAM", labelId: "app.mail.folders.spam" },
+    { key: "TRASH", labelId: "app.mail.folders.trash" },
+];
 
 const createId = () =>
     typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -70,18 +81,14 @@ const MailObject = ({
     onSent,
     onDiscard,
 }: MailEntity & { onSent?: (mail: MailItem) => void; onDiscard?: () => void }) => {
+    const { t } = useTrans();
+
     const [from, setFrom] = useState(sender ?? "");
     const [mailSubject, setMailSubject] = useState(subject ?? "");
     const [message, setMessage] = useState(text ?? "");
     const [sending, setSending] = useState(false);
 
     const refTextArea = useRef<HTMLTextAreaElement | null>(null);
-
-    useEffect(() => {
-        setFrom(sender ?? "");
-        setMailSubject(subject ?? "");
-        setMessage(text ?? "");
-    }, [sender, subject, text]);
 
     useEffect(() => {
         const el = refTextArea.current;
@@ -103,7 +110,7 @@ const MailObject = ({
             await emailjs.send(serviceId, templateId, {
                 from_email: from,
                 from_name: from,
-                to_email: "colaco.lucasgabriel@gmail.com",
+                to_email: RECIPIENT_EMAIL,
                 subject: `Portfolio inquiry — ${mailSubject}`,
                 message: [
                     "You received a new message from your portfolio website.",
@@ -141,50 +148,72 @@ const MailObject = ({
         <div className="flex h-full w-full flex-col px-3 py-4 sm:px-4">
             <div className="space-y-2 border-b-2 border-sidebar pb-4">
                 <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold">To:</p>
-                    <p className="break-all">colaco.lucasgabriel@gmail.com</p>
+                    <AppEditable id="app.mail.compose.to.label">
+                        <p className="font-semibold">{t("app.mail.compose.to.label")}:</p>
+                    </AppEditable>
+                    <AppEditable id="app.mail.recipient">
+                        <p className="break-all">{t("app.mail.recipient")}</p>
+                    </AppEditable>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <p className="font-semibold">From:</p>
-                    <input
-                        type="email"
-                        value={from}
-                        onChange={(e) => setFrom(e.target.value)}
-                        placeholder="your@email.com"
-                        className="min-w-0 flex-1 bg-transparent outline-none"
-                    />
+                    <AppEditable id="app.mail.compose.from.label">
+                        <p className="font-semibold">{t("app.mail.compose.from.label")}:</p>
+                    </AppEditable>
+                    <AppEditable id="app.mail.compose.from.placeholder">
+                        <input
+                            type="email"
+                            value={from}
+                            onChange={(e) => setFrom(e.target.value)}
+                            placeholder={t("app.mail.compose.from.placeholder")}
+                            className="min-w-0 flex-1 bg-transparent outline-none"
+                        />
+                    </AppEditable>
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <p className="font-semibold">Subject:</p>
-                    <input
-                        type="text"
-                        value={mailSubject}
-                        onChange={(e) => setMailSubject(e.target.value)}
-                        placeholder="Subject"
-                        className="min-w-0 flex-1 bg-transparent outline-none"
-                    />
+                    <AppEditable id="app.mail.compose.subject.label">
+                        <p className="font-semibold">{t("app.mail.compose.subject.label")}:</p>
+                    </AppEditable>
+                    <AppEditable id="app.mail.compose.subject.placeholder">
+                        <input
+                            type="text"
+                            value={mailSubject}
+                            onChange={(e) => setMailSubject(e.target.value)}
+                            placeholder={t("app.mail.compose.subject.placeholder")}
+                            className="min-w-0 flex-1 bg-transparent outline-none"
+                        />
+                    </AppEditable>
                 </div>
             </div>
 
             <div className="flex flex-1 flex-col gap-4 py-4">
-                <textarea
-                    ref={refTextArea}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Type your message here..."
-                    className="w-full flex-1 resize-none bg-transparent outline-none"
-                    rows={4}
-                />
+                <AppEditable id="app.mail.compose.body.placeholder">
+                    <textarea
+                        ref={refTextArea}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder={t("app.mail.compose.body.placeholder")}
+                        className="w-full flex-1 resize-none bg-transparent outline-none"
+                        rows={4}
+                    />
+                </AppEditable>
 
                 <div className="flex gap-2">
-                    <AppButton
-                        onClick={sendMail}
-                        text={sending ? "Sending..." : "Send"}
-                        disabled={sending}
-                    />
-                    <AppButton onClick={() => onDiscard?.()} text="Discard" disabled={sending} />
+                    <AppEditable id="app.mail.sendButton">
+                        <AppButton
+                            onClick={sendMail}
+                            text={sending ? t("app.mail.sendingButton") : t("app.mail.sendButton")}
+                            disabled={sending}
+                        />
+                    </AppEditable>
+                    <AppEditable id="app.mail.discardButton">
+                        <AppButton
+                            onClick={() => onDiscard?.()}
+                            text={t("app.mail.discardButton")}
+                            disabled={sending}
+                        />
+                    </AppEditable>
                 </div>
             </div>
         </div>
@@ -192,12 +221,13 @@ const MailObject = ({
 };
 
 const MailReader = ({ sender, subject, text }: MailItem) => {
+    const { t } = useTrans();
     return (
         <div className="flex h-full w-full flex-col px-3 py-4 sm:px-4">
             <div className="space-y-1 border-b-2 border-sidebar pb-4">
                 <p className="text-xl font-bold">{subject}</p>
                 <div className="flex items-center gap-2">
-                    <p className="font-semibold">From:</p>
+                    <p className="font-semibold">{t("app.mail.compose.from.label")}:</p>
                     <p>{sender}</p>
                 </div>
             </div>
@@ -206,42 +236,32 @@ const MailReader = ({ sender, subject, text }: MailItem) => {
     );
 };
 
-const initialMailList: Record<string, MailItem[]> = {
-    INBOX: [
-        {
-            id: "seed-1",
-            sender: "Alice Johnson",
-            subject: "Welcome to MailApp!",
-            text: "We're excited to have you on board.",
-        },
-        {
-            id: "seed-2",
-            sender: "Bob Smith",
-            subject: "Meeting Reminder",
-            text: "Don't forget about our meeting tomorrow.",
-        },
-        {
-            id: "seed-3",
-            sender: "Carol Lee",
-            subject: "Invoice Attached",
-            text: "Please find the invoice attached.",
-        },
-    ],
-    SENT: [],
-    SPAM: [],
-    TRASH: [],
-};
-
-const FOLDERS = ["Inbox", "Sent", "Spam", "Trash"];
+type MailSeed = { sender: string; subject: string; text: string };
 
 export const MailApp = () => {
-    const [mailList, setMailList] = useState<Record<string, MailItem[]>>(initialMailList);
+    const { t } = useTrans();
+
+    const seedRaw = t("app.mail.seed", { returnObjects: true });
+    const seed = Array.isArray(seedRaw) ? (seedRaw as MailSeed[]) : [];
+
+    // Build the initial inbox from the (editable) seed once, on mount.
+    const [mailList, setMailList] = useState<Record<string, MailItem[]>>(() => ({
+        INBOX: seed.map((m, i) => ({ id: `seed-${i}`, ...m })),
+        SENT: [],
+        SPAM: [],
+        TRASH: [],
+    }));
+
     const [openMail, setOpenMail] = useState<string | null>(null);
+    const [composeKey, setComposeKey] = useState(0);
     const [composing, setComposing] = useState(false);
     const [mobilePane, setMobilePane] = useState<"list" | "detail">("list");
-    const [activeFolder, setActiveFolder] = useState("Inbox");
+    // activeFolder now stores the internal KEY (e.g. "INBOX"), not the label.
+    const [activeFolder, setActiveFolder] = useState("INBOX");
+
 
     const startCompose = () => {
+        setComposeKey((k) => k + 1);
         setComposing(true);
         setOpenMail(null);
         setMobilePane("detail");
@@ -266,9 +286,7 @@ export const MailApp = () => {
         closeCompose();
     };
 
-    const handleDelete = (folder: string, id: string) => {
-        const folderKey = folder.toUpperCase();
-
+    const handleDelete = (folderKey: string, id: string) => {
         setMailList((prev) => {
             const next = { ...prev };
             const mail = (prev[folderKey] ?? []).find((m) => m.id === id);
@@ -286,30 +304,35 @@ export const MailApp = () => {
         setMobilePane("list");
     };
 
-    const selectFolder = (folder: string) => {
-        setActiveFolder(folder);
+    const selectFolder = (folderKey: string) => {
+        setActiveFolder(folderKey);
         setOpenMail(null);
         setComposing(false);
         setMobilePane("list");
     };
 
-    const currentMails = mailList[activeFolder.toUpperCase()] ?? [];
+    const currentMails = mailList[activeFolder] ?? [];
     const selectedMail = currentMails.find((m) => m.id === openMail);
     const hasDetail = composing || !!selectedMail;
 
+    const activeFolderMeta = FOLDERS.find((f) => f.key === activeFolder);
+    const activeFolderLabel = activeFolderMeta ? t(activeFolderMeta.labelId) : activeFolder;
+
     const renderDetail = useCallback(() => {
-        if (composing) {
-            return <MailObject onSent={handleSent} onDiscard={closeCompose} />;
-        }
         if (selectedMail) {
             return <MailReader {...selectedMail} />;
         }
+        if (composing) {
+            return <MailObject key={composeKey} onSent={handleSent} onDiscard={closeCompose} />;
+        }
         return (
             <div className="flex h-full w-full items-center justify-center px-4 text-center opacity-60">
-                <p>Select a message, or press the pen to write a new one.</p>
+                <AppEditable id="app.mail.emptyState">
+                    <p>{t("app.mail.emptyState")}</p>
+                </AppEditable>
             </div>
         );
-    }, [composing, selectedMail]);
+    }, [composeKey,selectedMail, composing]);
 
     return (
         <div className="flex h-full w-full flex-col bg-[#F5E4C0] px-3 pb-4 sm:px-4 sm:pb-16">
@@ -322,10 +345,8 @@ export const MailApp = () => {
                         size="md"
                         className="text-sidebar"
                         onClick={() => {
-                            if (mobilePane) {
-                                closeCompose();
-                                setMobilePane("list");
-                            }
+                            closeCompose();
+                            setMobilePane("list");
                         }}
                     />
                     <AppIconButton
@@ -349,27 +370,28 @@ export const MailApp = () => {
 
                 <p className="font-bold tracking-widest text-sidebar sm:hidden">
                     {mobilePane === "list"
-                        ? activeFolder.toUpperCase()
+                        ? activeFolderLabel.toUpperCase()
                         : composing
-                          ? "NEW MESSAGE"
-                          : "MESSAGE"}
+                          ? t("app.mail.mobile.newMessage")
+                          : t("app.mail.mobile.message")}
                 </p>
             </div>
 
             <div className="flex h-full min-h-0 flex-col sm:flex-row">
                 <div className="flex gap-4 overflow-x-auto border-b-2 border-sidebar py-2 sm:flex-col sm:gap-2 sm:overflow-visible sm:border-b-0 sm:pr-4 sm:pt-4">
                     {FOLDERS.map((folder) => (
-                        <button
-                            key={folder}
-                            onClick={() => selectFolder(folder)}
-                            className={`whitespace-nowrap text-left transition-opacity ${
-                                activeFolder === folder
-                                    ? "font-bold"
-                                    : "opacity-60 hover:opacity-100"
-                            }`}
-                        >
-                            {folder}
-                        </button>
+                        <AppEditable id={folder.labelId} key={folder.key}>
+                            <button
+                                onClick={() => selectFolder(folder.key)}
+                                className={`whitespace-nowrap text-left transition-opacity ${
+                                    activeFolder === folder.key
+                                        ? "font-bold"
+                                        : "opacity-60 hover:opacity-100"
+                                }`}
+                            >
+                                {t(folder.labelId)}
+                            </button>
+                        </AppEditable>
                     ))}
                 </div>
 
@@ -378,19 +400,22 @@ export const MailApp = () => {
                         mobilePane === "list" ? "block" : "hidden"
                     }`}
                 >
-                    {currentMails.map((mail) => (
-                        <div key={mail.id} onClick={() => openMessage(mail.id)}>
-                            <MailItemComponent
-                                {...mail}
-                                active={!composing && openMail === mail.id}
-                                onDelete={() => handleDelete(activeFolder, mail.id)}
-                            />
-                        </div>
-                    ))}
+                    <AppEditable id="app.mail.seed">
+                        <>
+                            {currentMails.map((mail) => (
+                                <div key={mail.id} onClick={() => openMessage(mail.id)}> <MailItemComponent
+                                        {...mail}
+                                        active={openMail === mail.id}   // drop the !composing guard; selection wins now
+                                        onDelete={() => handleDelete(activeFolder, mail.id)}
+                                    />
+                                </div>
+                            ))}
+                        </>
+                    </AppEditable>
                 </div>
 
-                {hasDetail && mobilePane && (
-                    <div className={`min-h-0 flex-grow sm:flex`}>
+                {hasDetail && (
+                    <div className="min-h-0 flex-grow sm:flex">
                         <div className="min-w-0 flex-grow overflow-y-auto">{renderDetail()}</div>
                     </div>
                 )}

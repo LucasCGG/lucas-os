@@ -1,8 +1,16 @@
-// Desktop.tsx
+import { useEffect } from "react";
 import BackgroundImage from "../../assets/BackgroundImage.png";
 import { Dock, WindowManager } from "../../components";
+import { CmsLayer } from "../../components/cms";
+import { useAuthCtx } from "../../contexts";
 
 export const Desktop = () => {
+  const { allowEdit } = useAuthCtx();
+
+  useEffect(() => {
+    console.debug("allowEdit", allowEdit);
+  },[allowEdit])
+
     return (
         <div className="flex h-screen w-screen bg-[#5D341A] py-3 pr-3">
             {/* Left Dock */}
@@ -22,6 +30,11 @@ export const Desktop = () => {
                 {/* FX overlay for ghost animations */}
                 <div id="fx-layer" className="pointer-events-none absolute inset-0 z-[99999]" />
                 <WindowManager defaultApp="about" />
+
+
+                {allowEdit && (
+                  <CmsLayer />
+                )}
             </div>
         </div>
     );

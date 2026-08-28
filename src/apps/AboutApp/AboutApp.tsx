@@ -1,85 +1,46 @@
-import React from "react";
+import { FC } from "react";
 import AboutMeAvatar from "./assets/Images/AboutMeAvatar.png";
 import { AppIcon, Timeline } from "../../components";
+import { AppEditable } from "../../components/cms";
+import { useTrans } from "../../hooks/useTrans";
 
-type Skill = { title: string; icon: string };
+const skillIcons: Record<string, string> = {
+    HTML: "icn-html",
+    CSS: "icn-css",
+    JS: "icn-js",
+    React: "icn-react",
+    "C#": "icn-csharp",
+    WordPress: "icn-wordpress",
+    Figma: "icn-figma",
+    Rive: "icn-rive",
+    Webflow: "icn-webflow",
+};
+const iconFor = (name: string) => skillIcons[name] ?? skillIcons[name.trim()] ?? "";
 
-const skills: Skill[] = [
-    { title: "HTML", icon: "icn-html" },
-    { title: "CSS", icon: "icn-css" },
-    { title: "JS", icon: "icn-js" },
-    { title: "React", icon: "icn-react" },
-    { title: "C#", icon: "icn-csharp" },
-    { title: "WordPress", icon: "icn-wordpress" },
-    { title: "Figma", icon: "icn-figma" },
-    { title: "Rive", icon: "icn-rive" },
-    { title: "Webflow", icon: "icn-webflow" },
-];
+export const AboutApp: FC = () => {
+    const { t, tc } = useTrans();
 
-const timeline = [
-    {
-        year: "2021",
-        title: "Started WISS School",
-        sub: "Began my EFZ program in software development.",
-    },
-    {
-        year: "2023",
-        title: "Apprenticeship @ Expertshare AG",
-        sub: (
-            <>
-                Worked on{" "}
-                <span className="group relative cursor-text underline decoration-accent_orange decoration-2 underline-offset-4 after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[3px] after:origin-left after:scale-x-0 after:bg-accent_orange after:transition-transform after:duration-300 hover:text-text-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent_orange/50 group-hover:after:scale-x-100">
-                    SaaS platforms SD
-                </span>
-                , UI/UX, and web apps.
-            </>
-        ),
-    },
-    {
-        year: "2025",
-        title: "EFZ Graduation & Awards",
-        sub: (
-            <>
-                Graduated with <b>5.6 Grade</b>,{" "}
-                <span className="group relative cursor-text underline decoration-accent_orange decoration-2 underline-offset-4 after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[3px] after:origin-left after:scale-x-0 after:bg-accent_orange after:transition-transform after:duration-300 hover:text-text-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent_orange/50 group-hover:after:scale-x-100">
-                    ZLI Award
-                </span>{" "}
-                &{" "}
-                <span className="group relative cursor-text underline decoration-accent_orange decoration-2 underline-offset-4 after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[3px] after:origin-left after:scale-x-0 after:bg-accent_orange after:transition-transform after:duration-300 hover:text-text-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent_orange/50 group-hover:after:scale-x-100">
-                    {" "}
-                    Best in Rank
-                </span>
-                .
-            </>
-        ),
-    },
-    {
-        year: "Present",
-        title: "Lead Frontend Dev & CS Student",
-        sub: (
-            <>
-                Leading frontend at{" "}
-                <span className="group relative cursor-text underline decoration-accent_orange decoration-2 underline-offset-4 after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[3px] after:origin-left after:scale-x-0 after:bg-accent_orange after:transition-transform after:duration-300 hover:text-text-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent_orange/50 group-hover:after:scale-x-100">
-                    expertshare AG
-                </span>{" "}
-                while studying{" "}
-                <span className="group relative cursor-text underline decoration-accent_orange decoration-2 underline-offset-4 after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[3px] after:origin-left after:scale-x-0 after:bg-accent_orange after:transition-transform after:duration-300 hover:text-text-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent_orange/50 group-hover:after:scale-x-100">
-                    Computer Science
-                </span>{" "}
-                at ZHAW.
-            </>
-        ),
-    },
-];
+    const skillsRaw = t("app.about.skills", { returnObjects: true });
+    const skills = Array.isArray(skillsRaw) ? (skillsRaw as string[]) : [];
 
-export const AboutApp: React.FC = () => {
+    const timelineRaw = t("app.about.timeline", { returnObjects: true });
+    const timelineData = Array.isArray(timelineRaw)
+        ? (timelineRaw as { year: string; title: string; sub: string }[])
+        : [];
+
+    const timeline = timelineData.map((item) => ({
+        year: item.year === "Present" ? t("com.timeline.presentLabel") : item.year,
+        title: item.title,
+        // sub holds the translated string (with tags); render tags via <Trans> children
+        sub: tc(item.sub),
+    }));
+
     return (
         <div className="h-full min-h-0 w-full overflow-auto bg-bg_green p-4 pb-16 text-text-dark">
             <div className="max-w-[1200px]">
                 <div className="flex flex-wrap items-start justify-center gap-8 [container-type:inline-size] [@container(min-width:665px)]:justify-start">
                     {/* Avatar + Skills */}
                     <div className="order-2 flex w-full flex-shrink-0 flex-col items-center [@container(min-width:665px)]:order-1 [@container(min-width:665px)]:[width:clamp(240px,28vw,100%)]">
-                        {/* Large avatar only on wide containers */}
                         <img
                             src={AboutMeAvatar}
                             alt="Lucas avatar"
@@ -87,20 +48,24 @@ export const AboutApp: React.FC = () => {
                         />
 
                         <div className="w-full flex-col">
-                            <h2 className="mt-6 text-xl font-semibold text-text-muted">
-                                My Skills
-                            </h2>
-                            <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(2.75rem,1fr))] gap-3">
-                                {skills.map((s) => (
-                                    <div
-                                        key={s.title}
-                                        title={s.title}
-                                        className="flex aspect-square items-center justify-center rounded-md bg-background p-2"
-                                    >
-                                        <AppIcon icon={s.icon} size="auto" />
-                                    </div>
-                                ))}
-                            </div>
+                            <AppEditable id="app.about.skillsHeading">
+                                <h2 className="mt-6 text-xl font-semibold text-text-muted">
+                                    {t("app.about.skillsHeading")}
+                                </h2>
+                            </AppEditable>
+                            <AppEditable id="app.about.skills">
+                                <div className="mt-3 grid grid-cols-[repeat(auto-fit,minmax(2.75rem,1fr))] gap-3">
+                                    {skills.map((title) => (
+                                        <div
+                                            key={title}
+                                            title={title}
+                                            className="flex aspect-square items-center justify-center rounded-md bg-background p-2"
+                                        >
+                                            <AppIcon icon={iconFor(title)} size="auto" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </AppEditable>
                         </div>
                     </div>
 
@@ -113,45 +78,28 @@ export const AboutApp: React.FC = () => {
                             />
 
                             <div className="text-start leading-[1.1]">
-                                <p className="font-chunky text-3xl text-text-muted [@container(min-width:420px)]:text-4xl [@container(min-width:665px)]:text-5xl [@container(min-width:900px)]:text-6xl">
-                                    Hey there, I’m
-                                </p>
-                                <span className="text-start font-crisis text-3xl text-accent_orange [@container(min-width:420px)]:text-4xl [@container(min-width:665px)]:text-5xl [@container(min-width:900px)]:text-6xl">
-                                    Lucas
-                                </span>
+                                <AppEditable id="app.about.greeting">
+                                    <p className="font-chunky text-3xl text-text-muted [@container(min-width:420px)]:text-4xl [@container(min-width:665px)]:text-5xl [@container(min-width:900px)]:text-6xl">
+                                        {t("app.about.greetingPre")}
+                                    </p>
+                                    <span className="text-start font-crisis text-3xl text-accent_orange [@container(min-width:420px)]:text-4xl [@container(min-width:665px)]:text-5xl [@container(min-width:900px)]:text-6xl">
+                                        {t("app.about.greetingName")}
+                                    </span>
+                                </AppEditable>
                             </div>
                         </div>
 
-                        <p className="mt-6 max-w-prose text-sm leading-7 text-text-muted/90 [@container(min-width:420px)]:text-base [@container(min-width:665px)]:mx-0 [@container(min-width:900px)]:text-lg">
-                            I love bringing ideas to life with{" "}
-                            <a
-                                className="group relative cursor-text underline decoration-accent_orange decoration-2 underline-offset-4 after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[3px] after:origin-left after:scale-x-0 after:bg-accent_orange after:transition-transform after:duration-300 hover:text-text-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent_orange/50 group-hover:after:scale-x-100"
-                                href="#"
-                            >
-                                code
-                            </a>{" "}
-                            and{" "}
-                            <a
-                                className="group relative cursor-text underline decoration-accent_orange decoration-2 underline-offset-4 after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[3px] after:origin-left after:scale-x-0 after:bg-accent_orange after:transition-transform after:duration-300 hover:text-text-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent_orange/50 group-hover:after:scale-x-100"
-                                href="#"
-                            >
-                                design
-                            </a>{" "}
-                            — whether it’s building smooth frontend interfaces, animating with Rive,
-                            or hacking together backend logic. I’ve touched a bit of{" "}
-                            <a
-                                className="group relative cursor-text underline decoration-accent_orange decoration-2 underline-offset-4 after:absolute after:-bottom-[2px] after:left-0 after:right-0 after:h-[3px] after:origin-left after:scale-x-0 after:bg-accent_orange after:transition-transform after:duration-300 hover:text-text-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent_orange/50 group-hover:after:scale-x-100"
-                                href="#"
-                            >
-                                everything
-                            </a>
-                            , and I’m always up for a new challenge. Whatever you throw at me, I’ll
-                            figure it out (and probably already have something in mind for it ;P)
-                        </p>
+                        <AppEditable id="app.about.intro">
+                            <p className="mt-6 max-w-prose text-sm leading-7 text-text-muted/90 [@container(min-width:420px)]:text-base [@container(min-width:665px)]:mx-0 [@container(min-width:900px)]:text-lg">
+                                {tc("app.about.intro")}
+                            </p>
+                        </AppEditable>
                     </div>
                 </div>
 
-                <Timeline items={timeline} horizontalMin={700} />
+                <AppEditable id="app.about.timeline">
+                    <Timeline items={timeline} horizontalMin={700} />
+                </AppEditable>
             </div>
         </div>
     );

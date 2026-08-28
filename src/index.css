@@ -154,3 +154,121 @@
         box-shadow: 0 0 0 2px #7e57c2;
     }
 }
+
+.cms-editable {
+    outline: 1px dashed rgba(126, 87, 194, 0.7);
+    outline-offset: 3px;
+    border-radius: 3px;
+    transition:
+        outline-color 120ms ease,
+        background-color 120ms ease;
+}
+.cms-editable:hover {
+    outline: 2px solid rgba(126, 87, 194, 0.9);
+    background-color: rgba(126, 87, 194, 0.08);
+    cursor: pointer;
+}
+.cms-editable--selected,
+.cms-editable--selected:hover {
+    outline: 2px solid #7e57c2;
+    background-color: rgba(126, 87, 194, 0.12);
+}
+
+.cms-toolbar {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+}
+
+.cms-panel {
+    position: fixed;
+    top: 70px;
+    right: 16px;
+    width: 300px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    z-index: 100000;
+    padding: 10px;
+}
+.cms-panel h3 {
+    margin: 0 0 8px 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #2a2a2a;
+}
+.cms-panel label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #5a5a5a;
+    margin: 8px 0 3px;
+}
+.cms-input,
+.cms-textarea {
+    width: 100%;
+    padding: 5px 7px;
+    font-size: 0.85rem;
+    border: 1px solid #5a5a5a;
+    border-top-color: #808080;
+    border-left-color: #808080;
+    background: #fff;
+    color: #111;
+    border-radius: 2px;
+}
+.cms-textarea {
+    min-height: 90px;
+    resize: vertical;
+    line-height: 1.4;
+}
+.cms-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 4px;
+}
+.cms-row .cms-input {
+    flex: 1;
+}
+.cms-hint {
+    font-size: 0.7rem;
+    color: #6a6a6a;
+    margin-top: 6px;
+    line-height: 1.35;
+}
+.cms-mini-btn {
+    padding: 3px 7px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1;
+    background: #cfc8b8;
+    border: 1px solid #fff;
+    border-right-color: #5a5a5a;
+    border-bottom-color: #5a5a5a;
+    color: #222;
+    border-radius: 2px;
+    cursor: pointer;
+}
+.cms-mini-btn:active {
+    transform: translate(1px, 1px);
+    border-color: #5a5a5a;
+    border-right-color: #fff;
+    border-bottom-color: #fff;
+}
+.cms-mini-btn--danger {
+    color: #a11;
+}
+.cms-timeline-item {
+    border: 1px solid #b8b1a1;
+    border-radius: 3px;
+    padding: 6px;
+    margin-bottom: 6px;
+    background: rgba(255, 255, 255, 0.5);
+}

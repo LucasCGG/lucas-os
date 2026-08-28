@@ -4,7 +4,7 @@ import { Desktop, Mobile } from "../layout";
 import { RetroStart } from "../components/RetroStartup/RetroStartup";
 import { useDynamicTabTitle, useIsMobile } from "../hooks";
 
-export const Portfolio = () => {
+const Portfolio = () => {
     useDynamicTabTitle();
 
     const isMobile = useIsMobile();
@@ -17,9 +17,15 @@ export const Portfolio = () => {
         []
     );
 
+
+    const comesFromLoginPage = localStorage.getItem("hideStartup") === "false";
+
     const [hasVisited, setHasVisited] = useState<boolean>(initialHasVisited);
     const [showMessage, setShowMessage] = useState<boolean>(() => !initialHasVisited);
-    const [showStarter, setShowStarter] = useState<boolean>(true);
+    const [showStarter, setShowStarter] = useState<boolean>(comesFromLoginPage ?? true);
+
+    console.debug("showStart", showStarter);
+    console.debug("comesFromLogin", comesFromLoginPage);
 
     useEffect(() => {
         if (!hasVisited) {
@@ -76,3 +82,4 @@ export const Portfolio = () => {
         </>
     );
 };
+export default Portfolio;
