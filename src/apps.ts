@@ -2,6 +2,7 @@ import { SwitcheruGameBecauseNamingConventions } from "./apps/2048Replica";
 import { AboutApp } from "./apps/AboutApp";
 import { Browser } from "./apps/Browser";
 import { Console } from "./apps/Console";
+import { DungeonGame } from "./apps/DungeonGame";
 import { MailApp } from "./apps/MailApp";
 import { PdfViewer } from "./apps/PdfViewer";
 
@@ -54,5 +55,13 @@ export const appsRegistry = {
         icon: "icn-2048-app",
         defaultSize: {width: 300, height:400},
         pinned: true,
-    }
+    },
+    dungeon: {
+        id: "dungeon",
+        title: "Dungeon",
+        component: DungeonGame,
+        icon: "icn-2048-app",
+        defaultSize: { width: 820, height: 620 },
+        pinned: true,
+    },
 };

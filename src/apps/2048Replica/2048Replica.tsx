@@ -163,6 +163,20 @@ function reducer(state: State, action: Action): State {
     }
 }
 
+const colorFor = (val: number)=> {
+    const hash = (val * 2654435761) >>> 0;
+    const bg = "#" + (hash & 0xffffff).toString(16).padStart(6, "0");
+
+    // pick readable text color from luminance
+    const r = (hash >> 16) & 0xff;
+    const g = (hash >> 8) & 0xff;
+    const b = hash & 0xff;
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const fg = luminance > 0.5 ? "#000000" : "#ffffff";
+
+    return { bg, fg };
+}
+
 export const SwitcheruGameBecauseNamingConventions = () => {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -328,7 +342,8 @@ export const SwitcheruGameBecauseNamingConventions = () => {
                 ctx.strokeRect(cellX, cellY, cellSize, cellSize);
 
                 if (val > 0) {
-                    ctx.fillStyle = "white";
+                    const { bg, fg } = colorFor(val);
+                    ctx.fillStyle = bg;
                     ctx.fillRect(
                         cellX + padding / 2,
                         cellY + padding / 2,
@@ -336,7 +351,7 @@ export const SwitcheruGameBecauseNamingConventions = () => {
                         cellSize - padding
                     );
 
-                    ctx.fillStyle = "black";
+                    ctx.fillStyle = fg;
                     ctx.font = `${cellSize / 2}px Arial`;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "middle";
@@ -345,8 +360,6 @@ export const SwitcheruGameBecauseNamingConventions = () => {
             });
         });
     }, [
-        canvasRef?.current?.clientHeight,
-        canvasRef?.current?.clientWidth,
         state.board,
         state.gameState,
         state.score,
