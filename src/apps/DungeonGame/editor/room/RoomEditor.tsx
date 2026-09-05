@@ -33,14 +33,19 @@ export const RoomEditor = ({
       walls: [],
       pillars: [],
       chestSpots: [],
+      decorations: [],
 
       doors: [],
 
       tags: [],
+      weight: 1,
     });
 
   const [tool, setTool] =
     useState<RoomTool>("select");
+
+  const [decorKind, setDecorKind] =
+    useState("crate");
 
   const [selected, setSelected] =
     useState<EditorSelection>({
@@ -102,6 +107,8 @@ export const RoomEditor = ({
         <RoomToolbar
           tool={tool}
           onToolChange={setTool}
+          decorKind={decorKind}
+          onDecorKindChange={setDecorKind}
         />
       </div>
 
@@ -121,6 +128,7 @@ export const RoomEditor = ({
           tool={tool}
           selected={selected}
           setSelected={setSelected}
+          decorKind={decorKind}
         />
       </div>
 

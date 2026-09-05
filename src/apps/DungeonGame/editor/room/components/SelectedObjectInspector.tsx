@@ -4,6 +4,7 @@ import {
 } from "react";
 import { RoomTemplate } from "../../../scenes/RoomTemplate";
 import { EditorSelection } from "../types/RoomEditorState";
+import { DECOR_ASSETS } from "../../../objects/Decoration";
 
 interface Props {
   room: RoomTemplate;
@@ -64,6 +65,37 @@ export function SelectedObjectInspector({
         };
       }
 
+      if (selected.type === "decoration") {
+        return {
+          ...previous,
+          decorations:
+            (previous.decorations ?? []).filter(
+              (_, index) =>
+                index !== selected.index,
+            ),
+        };
+      }
+
+      if (selected.type === "floor") {
+        return {
+          ...previous,
+          floorRegions:
+            (previous.floorRegions ?? []).filter(
+              (_, index) => index !== selected.index,
+            ),
+        };
+      }
+
+      if (selected.type === "water") {
+        return {
+          ...previous,
+          waterRegions:
+            (previous.waterRegions ?? []).filter(
+              (_, index) => index !== selected.index,
+            ),
+        };
+      }
+
       return previous;
     });
   };
@@ -89,6 +121,32 @@ export function SelectedObjectInspector({
       return {
         ...previous,
         walls,
+      };
+    });
+  };
+
+  const updateRegion = (
+    field: "floorRegions" | "waterRegions",
+    property: "x" | "y" | "width" | "height",
+    value: number,
+  ) => {
+    setRoom((previous) => {
+      const regions = [...(previous[field] ?? [])];
+
+      const region = regions[selected.index];
+
+      if (!region) {
+        return previous;
+      }
+
+      regions[selected.index] = {
+        ...region,
+        [property]: value,
+      };
+
+      return {
+        ...previous,
+        [field]: regions,
       };
     });
   };
@@ -141,7 +199,58 @@ export function SelectedObjectInspector({
         };
       }
 
+      if (selected.type === "decoration") {
+        const decorations = [
+          ...(previous.decorations ?? []),
+        ];
+
+        const decoration =
+          decorations[selected.index];
+
+        if (!decoration) {
+          return previous;
+        }
+
+        decorations[selected.index] = {
+          ...decoration,
+          [property]: value,
+        };
+
+        return {
+          ...previous,
+          decorations,
+        };
+      }
+
       return previous;
+    });
+  };
+
+  const updateDecoration = (
+    property: "kind" | "scale" | "rotation",
+    value: string | number,
+  ) => {
+    setRoom((previous) => {
+      const decorations = [
+        ...(previous.decorations ?? []),
+      ];
+
+      const decoration =
+        decorations[selected.index];
+
+      if (!decoration) {
+        return previous;
+      }
+
+      decorations[selected.index] = {
+        ...decoration,
+        [property]: value,
+      };
+
+      return {
+        ...previous,
+        decorations,
+      };
     });
   };
 
@@ -307,6 +416,131 @@ export function SelectedObjectInspector({
                       "y",
                       value,
                     ),
+                )}
+              </>
+            );
+          })()}
+
+        {selected.type === "decoration" &&
+          (() => {
+            const decoration =
+              (room.decorations ?? [])[
+                selected.index
+              ];
+
+            if (!decoration) {
+              return null;
+            }
+
+            return (
+              <>
+                {input(
+                  "X",
+                  decoration.x,
+                  (value) =>
+                    updatePoint(
+                      "x",
+                      value,
+                    ),
+                )}
+
+                {input(
+                  "Y",
+                  decoration.y,
+                  (value) =>
+                    updatePoint(
+                      "y",
+                      value,
+                    ),
+                )}
+
+                <label className="flex items-center gap-2">
+                  <span className="w-12 text-xs text-white/50">
+                    Kind
+                  </span>
+
+                  <select
+                    value={decoration.kind}
+                    onChange={(event) =>
+                      updateDecoration(
+                        "kind",
+                        event.target.value,
+                      )
+                    }
+                    className="
+                      w-full
+                      rounded
+                      border
+                      border-white/15
+                      bg-black/30
+                      px-2
+                      py-1
+                      text-sm
+                    "
+                  >
+                    {Object.keys(DECOR_ASSETS).map(
+                      (kind) => (
+                        <option
+                          key={kind}
+                          value={kind}
+                        >
+                          {kind}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+
+                {input(
+                  "Scale",
+                  decoration.scale ?? 1,
+                  (value) =>
+                    updateDecoration(
+                      "scale",
+                      value,
+                    ),
+                )}
+
+                {input(
+                  "Rotate",
+                  decoration.rotation ?? 0,
+                  (value) =>
+                    updateDecoration(
+                      "rotation",
+                      value,
+                    ),
+                )}
+              </>
+            );
+          })()}
+
+        {(selected.type === "floor" || selected.type === "water") &&
+          (() => {
+            const field =
+              selected.type === "floor" ? "floorRegions" : "waterRegions";
+
+            const region = (room[field] ?? [])[selected.index];
+
+            if (!region) {
+              return null;
+            }
+
+            return (
+              <>
+                {input("X", region.x, (value) =>
+                  updateRegion(field, "x", value),
+                )}
+
+                {input("Y", region.y, (value) =>
+                  updateRegion(field, "y", value),
+                )}
+
+                {input("W", region.width, (value) =>
+                  updateRegion(field, "width", value),
+                )}
+
+                {input("H", region.height, (value) =>
+                  updateRegion(field, "height", value),
                 )}
               </>
             );

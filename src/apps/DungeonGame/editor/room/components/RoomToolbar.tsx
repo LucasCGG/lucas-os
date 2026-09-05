@@ -1,8 +1,11 @@
-import { RoomTool } from "./types/RoomEditorState";
+import { RoomTool } from "../types/RoomEditorState";
+import { DECOR_ASSETS } from "../../../objects/Decoration";
 
 interface RoomToolbarProps {
   tool: RoomTool;
   onToolChange: (tool: RoomTool) => void;
+  decorKind: string;
+  onDecorKindChange: (kind: string) => void;
 }
 
 interface ToolButtonProps {
@@ -36,6 +39,8 @@ function ToolButton({
 export function RoomToolbar({
   tool,
   onToolChange,
+  decorKind,
+  onDecorKindChange,
 }: RoomToolbarProps) {
   return (
     <div className="flex flex-col gap-1 p-2">
@@ -66,6 +71,65 @@ export function RoomToolbar({
         active={tool === "chest"}
         onClick={() => onToolChange("chest")}
       />
+
+      <ToolButton
+        label="✿ Decoration"
+        active={tool === "decoration"}
+        onClick={() => onToolChange("decoration")}
+      />
+
+      {tool === "decoration" && (
+        <select
+          value={decorKind}
+          onChange={(event) => onDecorKindChange(event.target.value)}
+          className="
+            mx-2
+            mb-1
+            rounded
+            border
+            border-white/15
+            bg-black/30
+            px-2
+            py-1
+            text-xs
+            text-white/80
+            outline-none
+            focus:border-emerald-400
+          "
+        >
+          {Object.keys(DECOR_ASSETS).map((kind) => (
+            <option key={kind} value={kind}>
+              {kind}
+            </option>
+          ))}
+        </select>
+      )}
+
+      <div className="my-1 border-t border-white/10" />
+
+      <span className="px-2 py-1 text-[10px] font-semibold tracking-widest text-white/40">
+        FLOOR PLAN
+      </span>
+
+      <ToolButton
+        label="▦ Floor area"
+        active={tool === "floor"}
+        onClick={() => onToolChange("floor")}
+      />
+
+      <ToolButton
+        label="~ Water area"
+        active={tool === "water"}
+        onClick={() => onToolChange("water")}
+      />
+
+      <div className="px-2 text-[11px] leading-relaxed text-white/35">
+        Drag a floor area to carve a corridor shape — the rest of the room
+        becomes non-floor (void). Leave floor areas empty for an ordinary
+        full-rectangle room. Water areas are always floor too.
+      </div>
+
+      <div className="my-1 border-t border-white/10" />
 
       <ToolButton
         label="⌫ Erase"

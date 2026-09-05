@@ -1,9 +1,17 @@
 import { RoomTemplate } from "../../../scenes/RoomTemplate";
 
-export type RoomTool = | "select" | "wall" | "pillar" | "chest" | "erase";
+export type RoomTool =
+  | "select"
+  | "wall"
+  | "pillar"
+  | "chest"
+  | "decoration"
+  | "floor"
+  | "water"
+  | "erase";
 
 export interface EditorSelection{
-  type: | "wall" | "pillar" | "chest" | null;
+  type: | "wall" | "pillar" | "chest" | "decoration" | "floor" | "water" | null;
   index: number,
 }
 

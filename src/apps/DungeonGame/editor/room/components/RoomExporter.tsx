@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { RoomTemplate } from "../../scenes/rooms/RoomTemplate";
+import { RoomTemplate } from "../../../scenes/RoomTemplate";
 
 interface RoomExporterProps {
   room: RoomTemplate;
@@ -43,6 +43,38 @@ function roomToTypeScript(
     )
     .join("\n");
 
+  const decorations = (room.decorations ?? [])
+    .map(({ x, y, kind, scale, rotation }) => {
+      const props = [
+        `x: ${x}`,
+        `y: ${y}`,
+        `kind: "${kind}"`,
+        ...(scale !== undefined ? [`scale: ${scale}`] : []),
+        ...(rotation !== undefined ? [`rotation: ${rotation}`] : []),
+      ];
+
+      return `    { ${props.join(", ")} },`;
+    })
+    .join("\n");
+
+  const rectList = (regions: { x: number; y: number; width: number; height: number }[]) =>
+    regions
+      .map(
+        ({ x, y, width, height }) =>
+          `    { x: ${x}, y: ${y}, width: ${width}, height: ${height} },`,
+      )
+      .join("\n");
+
+  const floorRegions = rectList(room.floorRegions ?? []);
+  const waterRegions = rectList(room.waterRegions ?? []);
+
+  const boundaryWalls = room.boundaryWalls
+    ? (["N", "S", "E", "W"] as const)
+        .filter((direction) => room.boundaryWalls?.[direction] === false)
+        .map((direction) => `${direction}: false`)
+        .join(", ")
+    : "";
+
   const doors =
     room.doors
       .map(
@@ -82,9 +114,31 @@ ${pillars}
 ${chestSpots}
   ],
 
+  decorations: [
+${decorations}
+  ],
+${
+  floorRegions
+    ? `
+  floorRegions: [
+${floorRegions}
+  ],
+`
+    : ""
+}${
+  waterRegions
+    ? `
+  waterRegions: [
+${waterRegions}
+  ],
+`
+    : ""
+}
   doors: [${doors}],
-
+${boundaryWalls ? `\n  boundaryWalls: { ${boundaryWalls} },\n` : ""}
   tags: [${tags}],
+
+  weight: ${room.weight ?? 1},
 };
 `;
 }

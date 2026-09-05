@@ -1,12 +1,27 @@
 import { RoomTemplate } from "../RoomTemplate";
-import { Room_NE } from "./Room_NE";
-import { Room_NW } from "./Room_NW";
-import { Room_SE } from "./Room_SE";
-import { Room_SW } from "./Room_SW";
+import {
+    NEW_ROOM_TEMPLATES,
+    Room_Barracks,
+    Room_Cistern,
+    Room_Entrance,
+    Room_Gallery,
+    Room_Throne,
+} from "./NewRooms";
+import { CORRIDOR_TEMPLATES } from "./Corridors";
+import { EXTRA_ROOM_TEMPLATES } from "./ExtraRooms";
+
+const isPlaceable = (template: RoomTemplate): boolean => template.doors.length > 0;
 
 export const ROOM_TEMPLATES: RoomTemplate[] = [
-  Room_SE,
-  Room_SW,
-  Room_NE,
-  Room_NW,
+    ...NEW_ROOM_TEMPLATES,
+    ...CORRIDOR_TEMPLATES,
+    ...EXTRA_ROOM_TEMPLATES,
+].filter(isPlaceable);
+
+export const DUNGEON_SEQUENCE: RoomTemplate[] = [
+    Room_Entrance,
+    Room_Barracks,
+    Room_Gallery,
+    Room_Cistern,
+    Room_Throne,
 ];

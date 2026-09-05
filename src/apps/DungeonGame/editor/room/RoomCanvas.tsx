@@ -15,6 +15,17 @@ import {
   EditorSelection,
   RoomTool,
 } from "./types/RoomEditorState";
+import { DECOR_ASSETS, decorationSize } from "../../objects/Decoration";
+import { AssetPool } from "../../sprites/AssetPool";
+
+import wallSheetUrl from "../../assets/environment/Dungeon_1/Dungeon_1.png";
+import pillarSheetUrl from "../../assets/environment/Dungeon_1/Dungeon_1_Pillars.png";
+import waterSheetUrl from "../../assets/environment/Dungeon_1/Dungeon_1_Sewer_Tileset.png";
+
+const WALL_SHEET = "dungeon/tileset";
+const PILLAR_SHEET = "dungeon/pillars";
+const WATER_SHEET = "dungeon/water";
+const TILE = 16;
 
 interface RoomCanvasProps {
   room: RoomTemplate;
@@ -22,6 +33,7 @@ interface RoomCanvasProps {
   tool: RoomTool;
   selected: EditorSelection;
   setSelected: Dispatch<SetStateAction<EditorSelection>>;
+  decorKind: string;
 }
 
 const GRID = 20;
@@ -36,6 +48,7 @@ export const RoomCanvas = ({
   tool,
   selected,
   setSelected,
+  decorKind,
 }: RoomCanvasProps) => {
   const canvasRef =
     useRef<HTMLCanvasElement | null>(null);
@@ -54,6 +67,46 @@ export const RoomCanvas = ({
       height: number;
     } | null>(null);
 
+  const [rectPreview, setRectPreview] =
+    useState<{
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    } | null>(null);
+
+  const [showGraphics, setShowGraphics] =
+    useState(false);
+
+  const [assetsReady, setAssetsReady] =
+    useState(false);
+
+  useEffect(() => {
+    if (!showGraphics || assetsReady) {
+      return;
+    }
+
+    let cancelled = false;
+
+    AssetPool.loadAll([
+      { path: WALL_SHEET, url: wallSheetUrl },
+      { path: PILLAR_SHEET, url: pillarSheetUrl },
+      { path: WATER_SHEET, url: waterSheetUrl },
+      ...Object.values(DECOR_ASSETS).map((asset) => ({
+        path: asset.path,
+        url: asset.url,
+      })),
+    ]).then(() => {
+      if (!cancelled) {
+        setAssetsReady(true);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showGraphics, assetsReady]);
+
   const dragRef = useRef<{
     type: "pan" | "move";
     startX: number;
@@ -67,12 +120,27 @@ export const RoomCanvas = ({
     startY: number;
   } | null>(null);
 
+  const rectDragRef = useRef<{
+    startX: number;
+    startY: number;
+  } | null>(null);
+
   const keysRef = useRef({
     w: false,
     a: false,
     s: false,
     d: false,
   });
+
+  const decorations = room.decorations ?? [];
+  const floorRegions = room.floorRegions ?? [];
+  const waterRegions = room.waterRegions ?? [];
+
+  /** floor/water regions are edited the same way — just different fields. */
+  const rectField = (
+    kind: "floor" | "water",
+  ): "floorRegions" | "waterRegions" =>
+    kind === "floor" ? "floorRegions" : "waterRegions";
 
   const snap = (value: number) =>
     Math.round(value / GRID) * GRID;
@@ -153,6 +221,67 @@ export const RoomCanvas = ({
     }
 
     ctx.restore();
+  };
+
+  const graphicsOn = showGraphics && assetsReady;
+
+  /** Same 9-slice frame WorldScene uses, so a preview pool looks like the real one. */
+  const waterTileAt = (
+    region: { x: number; y: number; width: number; height: number },
+    wx: number,
+    wy: number,
+  ): [number, number] => {
+    const col = Math.round((wx - region.x) / TILE);
+    const row = Math.round((wy - region.y) / TILE);
+    const lastCol = Math.max(0, Math.round(region.width / TILE) - 1);
+    const lastRow = Math.max(0, Math.round(region.height / TILE) - 1);
+
+    const atLeft = col <= 0;
+    const atRight = col >= lastCol;
+    const atTop = row <= 0;
+    const atBottom = row >= lastRow;
+
+    if (atTop && atLeft) return [9, 1];
+    if (atTop && atRight) return [11, 1];
+    if (atBottom && atLeft) return [9, 3];
+    if (atBottom && atRight) return [11, 3];
+    if (atTop) return [10, 1];
+    if (atBottom) return [10, 3];
+    if (atLeft) return [9, 2];
+    if (atRight) return [11, 2];
+    return [10, 2];
+  };
+
+  /** Tiles a 16×16-cell image across a room-space rect, at the current zoom/pan. */
+  const drawTiledRegion = (
+    ctx: CanvasRenderingContext2D,
+    image: CanvasImageSource,
+    rx: number,
+    ry: number,
+    rw: number,
+    rh: number,
+    pickTile: (worldX: number, worldY: number) => [number, number],
+  ) => {
+    for (let ty = 0; ty < rh; ty += TILE) {
+      for (let tx = 0; tx < rw; tx += TILE) {
+        const dw = Math.min(TILE, rw - tx);
+        const dh = Math.min(TILE, rh - ty);
+        const p = worldToScreen(rx + tx, ry + ty);
+        const [sc, sr] = pickTile(rx + tx, ry + ty);
+
+        ctx.drawImage(
+          image,
+          sc * TILE,
+          sr * TILE,
+          dw,
+          dh,
+          p.x,
+          p.y,
+          dw * zoom,
+          dh * zoom,
+        );
+      }
+    }
   };
 
   const drawRoom = (
@@ -264,6 +393,112 @@ export const RoomCanvas = ({
       roomHeight,
     );
 
+    // Floor/water regions are drawn first so walls, pillars, chests etc.
+    // paint over them — they mark which part of the rectangle is actually
+    // floor. If none are set, the whole room counts as floor (the default
+    // for an ordinary room); once you add one, only these rects are floor,
+    // which is how a corridor's cross shape (rest = void) is built.
+    if (graphicsOn) {
+      const floorSheet = AssetPool.getImage(WALL_SHEET);
+
+      if (floorSheet !== null) {
+        const floorAreas =
+          floorRegions.length > 0
+            ? floorRegions
+            : [{ x: 0, y: 0, width: room.width, height: room.height }];
+
+        for (const area of floorAreas) {
+          drawTiledRegion(
+            ctx,
+            floorSheet,
+            area.x,
+            area.y,
+            area.width,
+            area.height,
+            () => [4, 7],
+          );
+        }
+      }
+    }
+
+    floorRegions.forEach((region, i) => {
+      const p = worldToScreen(region.x, region.y);
+      const w = region.width * zoom;
+      const h = region.height * zoom;
+      const isSelected =
+        selected.type === "floor" && selected.index === i;
+
+      if (!graphicsOn) {
+        ctx.fillStyle = isSelected
+          ? "rgba(90,110,140,0.55)"
+          : "rgba(70,80,100,0.4)";
+        ctx.fillRect(p.x, p.y, w, h);
+      }
+
+      ctx.strokeStyle = isSelected
+        ? "#a8c0ff"
+        : "rgba(160,180,220,0.35)";
+      ctx.lineWidth = isSelected ? 2 : 1;
+      ctx.strokeRect(p.x + 0.5, p.y + 0.5, w - 1, h - 1);
+    });
+
+    if (graphicsOn) {
+      const waterSheet = AssetPool.getImage(WATER_SHEET);
+
+      if (waterSheet !== null) {
+        for (const region of waterRegions) {
+          drawTiledRegion(
+            ctx,
+            waterSheet,
+            region.x,
+            region.y,
+            region.width,
+            region.height,
+            (wx, wy) => waterTileAt(region, wx, wy),
+          );
+        }
+      }
+    }
+
+    waterRegions.forEach((region, i) => {
+      const p = worldToScreen(region.x, region.y);
+      const w = region.width * zoom;
+      const h = region.height * zoom;
+      const isSelected =
+        selected.type === "water" && selected.index === i;
+
+      if (!graphicsOn) {
+        ctx.fillStyle = isSelected
+          ? "rgba(60,180,190,0.6)"
+          : "rgba(40,150,160,0.45)";
+        ctx.fillRect(p.x, p.y, w, h);
+      }
+
+      ctx.strokeStyle = isSelected
+        ? "#8affe0"
+        : "rgba(90,220,210,0.4)";
+      ctx.lineWidth = isSelected ? 2 : 1;
+      ctx.strokeRect(p.x + 0.5, p.y + 0.5, w - 1, h - 1);
+    });
+
+    if (rectPreview) {
+      const p = worldToScreen(rectPreview.x, rectPreview.y);
+      const w = rectPreview.width * zoom;
+      const h = rectPreview.height * zoom;
+
+      ctx.fillStyle =
+        tool === "water"
+          ? "rgba(90,220,210,0.35)"
+          : "rgba(160,180,220,0.35)";
+      ctx.fillRect(p.x, p.y, w, h);
+
+      ctx.strokeStyle = "#a8c0ff";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.strokeRect(p.x + 0.5, p.y + 0.5, w - 1, h - 1);
+      ctx.setLineDash([]);
+    }
+
     room.walls.forEach((wall, i) => {
       const p = worldToScreen(
         wall.x,
@@ -280,16 +515,32 @@ export const RoomCanvas = ({
         selected.type === "wall" &&
         selected.index === i;
 
-      ctx.fillStyle = isSelected
-        ? "rgba(80,220,160,0.85)"
-        : "rgba(100,100,115,0.95)";
+      const wallSheet = graphicsOn
+        ? AssetPool.getImage(WALL_SHEET)
+        : null;
 
-      ctx.fillRect(
-        p.x,
-        p.y,
-        w,
-        h,
-      );
+      if (wallSheet !== null) {
+        drawTiledRegion(
+          ctx,
+          wallSheet,
+          wall.x,
+          wall.y,
+          wall.width,
+          wall.height,
+          () => [10, 1],
+        );
+      } else {
+        ctx.fillStyle = isSelected
+          ? "rgba(80,220,160,0.85)"
+          : "rgba(100,100,115,0.95)";
+
+        ctx.fillRect(
+          p.x,
+          p.y,
+          w,
+          h,
+        );
+      }
 
       ctx.strokeStyle = isSelected
         ? "#70ffc0"
@@ -361,16 +612,51 @@ export const RoomCanvas = ({
           selected.type === "pillar" &&
           selected.index === i;
 
-        ctx.fillStyle = isSelected
-          ? "rgba(210,170,80,0.95)"
-          : "rgba(130,105,65,0.95)";
+        const pillarSheet = graphicsOn
+          ? AssetPool.getImage(PILLAR_SHEET)
+          : null;
 
-        ctx.fillRect(
-          p.x,
-          p.y,
-          w,
-          h,
-        );
+        if (pillarSheet !== null) {
+          const variant = pillar.variant ?? 0;
+
+          ctx.drawImage(
+            pillarSheet,
+            variant * 16,
+            0,
+            16,
+            48,
+            p.x,
+            p.y,
+            w,
+            h,
+          );
+        } else {
+          ctx.fillStyle = isSelected
+            ? "rgba(210,170,80,0.95)"
+            : "rgba(130,105,65,0.95)";
+
+          ctx.fillRect(
+            p.x,
+            p.y,
+            w,
+            h,
+          );
+
+          ctx.fillStyle =
+            "rgba(255,255,255,0.25)";
+
+          ctx.beginPath();
+
+          ctx.arc(
+            p.x + w / 2,
+            p.y + h / 2,
+            3,
+            0,
+            Math.PI * 2,
+          );
+
+          ctx.fill();
+        }
 
         ctx.strokeStyle =
           isSelected
@@ -386,21 +672,6 @@ export const RoomCanvas = ({
           w - 1,
           h - 1,
         );
-
-        ctx.fillStyle =
-          "rgba(255,255,255,0.25)";
-
-        ctx.beginPath();
-
-        ctx.arc(
-          p.x + w / 2,
-          p.y + h / 2,
-          3,
-          0,
-          Math.PI * 2,
-        );
-
-        ctx.fill();
       },
     );
 
@@ -474,6 +745,78 @@ export const RoomCanvas = ({
         ctx.stroke();
       },
     );
+
+    decorations.forEach((decoration, i) => {
+      const { width: dw, height: dh } = decorationSize(
+        decoration.kind,
+        decoration.scale,
+      );
+
+      const p = worldToScreen(
+        decoration.x - dw / 2,
+        decoration.y - dh / 2,
+      );
+
+      const w = dw * zoom;
+      const h = dh * zoom;
+
+      const isSelected =
+        selected.type === "decoration" &&
+        selected.index === i;
+
+      const asset = graphicsOn
+        ? DECOR_ASSETS[decoration.kind]
+        : undefined;
+
+      const image = asset
+        ? AssetPool.getImage(asset.path)
+        : null;
+
+      if (asset && image !== null) {
+        ctx.save();
+        ctx.translate(p.x + w / 2, p.y + h / 2);
+        ctx.rotate(
+          ((decoration.rotation ?? 0) * Math.PI) / 180,
+        );
+        ctx.drawImage(
+          image,
+          asset.sx,
+          asset.sy,
+          asset.sw,
+          asset.sh,
+          -w / 2,
+          -h / 2,
+          w,
+          h,
+        );
+        ctx.restore();
+      } else {
+        ctx.fillStyle = isSelected
+          ? "rgba(90,220,190,0.9)"
+          : "rgba(60,150,130,0.75)";
+
+        ctx.fillRect(p.x, p.y, w, h);
+
+        if (zoom > 0.4) {
+          ctx.fillStyle = "rgba(255,255,255,0.7)";
+          ctx.font = "9px monospace";
+          ctx.fillText(decoration.kind, p.x + 2, p.y + 10);
+        }
+      }
+
+      ctx.strokeStyle = isSelected
+        ? "#8affe0"
+        : "rgba(255,255,255,0.2)";
+
+      ctx.lineWidth = isSelected ? 2 : 1;
+
+      ctx.strokeRect(
+        p.x + 0.5,
+        p.y + 0.5,
+        w - 1,
+        h - 1,
+      );
+    });
 
     const doorWidth =
       room.doorWidth;
@@ -719,6 +1062,9 @@ export const RoomCanvas = ({
     zoom,
     pan,
     wallPreview,
+    rectPreview,
+    showGraphics,
+    assetsReady,
     drawGrid,
     drawRoom,
     worldToScreen,
@@ -821,6 +1167,55 @@ export const RoomCanvas = ({
       }
     }
 
+    for (
+      let i = decorations.length - 1;
+      i >= 0;
+      i--
+    ) {
+      const decoration = decorations[i];
+
+      const { width: dw, height: dh } =
+        decorationSize(decoration.kind, decoration.scale);
+
+      if (
+        worldX >= decoration.x - dw / 2 &&
+        worldX <= decoration.x + dw / 2 &&
+        worldY >= decoration.y - dh / 2 &&
+        worldY <= decoration.y + dh / 2
+      ) {
+        return {
+          type: "decoration",
+          index: i,
+        };
+      }
+    }
+
+    for (let i = waterRegions.length - 1; i >= 0; i--) {
+      const region = waterRegions[i];
+
+      if (
+        worldX >= region.x &&
+        worldX <= region.x + region.width &&
+        worldY >= region.y &&
+        worldY <= region.y + region.height
+      ) {
+        return { type: "water", index: i };
+      }
+    }
+
+    for (let i = floorRegions.length - 1; i >= 0; i--) {
+      const region = floorRegions[i];
+
+      if (
+        worldX >= region.x &&
+        worldX <= region.x + region.width &&
+        worldY >= region.y &&
+        worldY <= region.y + region.height
+      ) {
+        return { type: "floor", index: i };
+      }
+    }
+
     return {
       type: null,
       index: -1,
@@ -870,6 +1265,29 @@ export const RoomCanvas = ({
     });
   };
 
+  const addDecoration = (
+    x: number,
+    y: number,
+  ) => {
+    setRoom((prev) => ({
+      ...prev,
+      decorations: [
+        ...(prev.decorations ?? []),
+        {
+          x: snap(x),
+          y: snap(y),
+          kind: decorKind,
+          scale: 1,
+        },
+      ],
+    }));
+
+    setSelected({
+      type: "decoration",
+      index: decorations.length,
+    });
+  };
+
   const removeSelected = () => {
     if (
       selected.type === null ||
@@ -885,6 +1303,15 @@ export const RoomCanvas = ({
         pillars: [...prev.pillars],
         chestSpots: [
           ...prev.chestSpots,
+        ],
+        decorations: [
+          ...(prev.decorations ?? []),
+        ],
+        floorRegions: [
+          ...(prev.floorRegions ?? []),
+        ],
+        waterRegions: [
+          ...(prev.waterRegions ?? []),
         ],
       };
 
@@ -909,12 +1336,44 @@ export const RoomCanvas = ({
         );
       }
 
+      if (selected.type === "decoration") {
+        next.decorations.splice(
+          selected.index,
+          1,
+        );
+      }
+
+      if (selected.type === "floor") {
+        next.floorRegions.splice(selected.index, 1);
+      }
+
+      if (selected.type === "water") {
+        next.waterRegions.splice(selected.index, 1);
+      }
+
       return next;
     });
 
     setSelected({
       type: null,
       index: -1,
+    });
+  };
+
+  const addRect = (
+    kind: "floor" | "water",
+    rect: { x: number; y: number; width: number; height: number },
+  ) => {
+    const field = rectField(kind);
+
+    setRoom((prev) => ({
+      ...prev,
+      [field]: [...(prev[field] ?? []), rect],
+    }));
+
+    setSelected({
+      type: kind,
+      index: (kind === "floor" ? floorRegions : waterRegions).length,
     });
   };
 
@@ -1007,6 +1466,33 @@ export const RoomCanvas = ({
           };
         }
 
+        if (hit.type === "decoration") {
+          const decoration =
+            decorations[hit.index];
+
+          dragRef.current = {
+            type: "move",
+            startX: world.x,
+            startY: world.y,
+            originalX: decoration.x,
+            originalY: decoration.y,
+          };
+        }
+
+        if (hit.type === "floor" || hit.type === "water") {
+          const region = (
+            hit.type === "floor" ? floorRegions : waterRegions
+          )[hit.index];
+
+          dragRef.current = {
+            type: "move",
+            startX: world.x,
+            startY: world.y,
+            originalX: region.x,
+            originalY: region.y,
+          };
+        }
+
         canvasRef.current?.setPointerCapture(
           e.pointerId,
         );
@@ -1056,6 +1542,28 @@ export const RoomCanvas = ({
       return;
     }
 
+    if (tool === "decoration") {
+      addDecoration(
+        world.x,
+        world.y,
+      );
+
+      return;
+    }
+
+    if (tool === "floor" || tool === "water") {
+      const startX = snap(world.x);
+      const startY = snap(world.y);
+
+      rectDragRef.current = { startX, startY };
+
+      setRectPreview({ x: startX, y: startY, width: 0, height: 0 });
+
+      canvasRef.current?.setPointerCapture(e.pointerId);
+
+      return;
+    }
+
     if (tool === "erase") {
       const hit =
         hitTest(
@@ -1073,6 +1581,15 @@ export const RoomCanvas = ({
             pillars: [...prev.pillars],
             chestSpots: [
               ...prev.chestSpots,
+            ],
+            decorations: [
+              ...(prev.decorations ?? []),
+            ],
+            floorRegions: [
+              ...(prev.floorRegions ?? []),
+            ],
+            waterRegions: [
+              ...(prev.waterRegions ?? []),
             ],
           };
 
@@ -1095,6 +1612,21 @@ export const RoomCanvas = ({
               hit.index,
               1,
             );
+          }
+
+          if (hit.type === "decoration") {
+            next.decorations.splice(
+              hit.index,
+              1,
+            );
+          }
+
+          if (hit.type === "floor") {
+            next.floorRegions.splice(hit.index, 1);
+          }
+
+          if (hit.type === "water") {
+            next.waterRegions.splice(hit.index, 1);
           }
 
           return next;
@@ -1159,6 +1691,27 @@ export const RoomCanvas = ({
       return;
     }
 
+    if (
+      (tool === "floor" || tool === "water") &&
+      rectDragRef.current
+    ) {
+      const world = getPointerPosition(e);
+
+      const start = rectDragRef.current;
+
+      const endX = snap(world.x);
+      const endY = snap(world.y);
+
+      setRectPreview({
+        x: Math.min(start.startX, endX),
+        y: Math.min(start.startY, endY),
+        width: Math.abs(endX - start.startX),
+        height: Math.abs(endY - start.startY),
+      });
+
+      return;
+    }
+
     const drag =
       dragRef.current;
 
@@ -1216,6 +1769,15 @@ export const RoomCanvas = ({
           chestSpots: [
             ...prev.chestSpots,
           ],
+          decorations: [
+            ...(prev.decorations ?? []),
+          ],
+          floorRegions: [
+            ...(prev.floorRegions ?? []),
+          ],
+          waterRegions: [
+            ...(prev.waterRegions ?? []),
+          ],
         };
 
         if (selected.type === "wall") {
@@ -1262,6 +1824,36 @@ export const RoomCanvas = ({
               x,
               y,
             };
+          }
+        }
+
+        if (selected.type === "decoration") {
+          const decoration =
+            next.decorations[
+              selected.index
+            ];
+
+          if (decoration) {
+            next.decorations[
+              selected.index
+            ] = {
+              ...decoration,
+              x,
+              y,
+            };
+          }
+        }
+
+        if (selected.type === "floor" || selected.type === "water") {
+          const list =
+            selected.type === "floor"
+              ? next.floorRegions
+              : next.waterRegions;
+
+          const region = list[selected.index];
+
+          if (region) {
+            list[selected.index] = { ...region, x, y };
           }
         }
 
@@ -1354,6 +1946,38 @@ export const RoomCanvas = ({
         canvasRef.current.releasePointerCapture(
           e.pointerId,
         );
+      }
+
+      return;
+    }
+
+    if (
+      (tool === "floor" || tool === "water") &&
+      rectDragRef.current
+    ) {
+      const world = getPointerPosition(e);
+
+      const start = rectDragRef.current;
+
+      const endX = snap(world.x);
+      const endY = snap(world.y);
+
+      const rect = {
+        x: Math.min(start.startX, endX),
+        y: Math.min(start.startY, endY),
+        width: Math.abs(endX - start.startX),
+        height: Math.abs(endY - start.startY),
+      };
+
+      if (rect.width >= GRID && rect.height >= GRID) {
+        addRect(tool, rect);
+      }
+
+      rectDragRef.current = null;
+      setRectPreview(null);
+
+      if (canvasRef.current?.hasPointerCapture(e.pointerId)) {
+        canvasRef.current.releasePointerCapture(e.pointerId);
       }
 
       return;
@@ -1592,6 +2216,24 @@ export const RoomCanvas = ({
         {tool.toUpperCase()} ·{" "}
         {Math.round(zoom * 100)}%
       </div>
+
+      <button
+        onClick={() => setShowGraphics((v) => !v)}
+        className={`
+          absolute right-3 top-3 rounded border px-2 py-1 text-[11px] backdrop-blur transition
+          ${
+            showGraphics
+              ? "border-emerald-400/60 bg-emerald-500/20 text-emerald-200"
+              : "border-white/10 bg-black/50 text-white/50 hover:text-white/80"
+          }
+        `}
+      >
+        {showGraphics
+          ? assetsReady
+            ? "◉ Graphics: ON"
+            : "◌ Loading…"
+          : "○ Graphics: OFF"}
+      </button>
 
       <div className="pointer-events-none absolute bottom-3 right-3 rounded border border-white/10 bg-black/50 px-2 py-1 text-[10px] text-white/40 backdrop-blur">
         WASD: pan · Shift + drag: pan · Middle mouse: pan · Wheel: zoom · Delete: remove

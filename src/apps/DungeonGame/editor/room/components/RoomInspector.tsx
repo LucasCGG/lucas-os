@@ -108,6 +108,19 @@ export function RoomInspector({
     });
   };
 
+  const hasBoundaryWall = (direction: Direction): boolean =>
+    room.boundaryWalls?.[direction] !== false;
+
+  const toggleBoundaryWall = (direction: Direction) => {
+    setRoom((previous) => ({
+      ...previous,
+      boundaryWalls: {
+        ...previous.boundaryWalls,
+        [direction]: !hasBoundaryWall(direction),
+      },
+    }));
+  };
+
   return (
     <div className="flex h-full flex-col overflow-y-auto">
 
@@ -197,6 +210,20 @@ export function RoomInspector({
             }
           />
 
+          <NumberField
+            label="Weight"
+            value={
+              room.weight ?? 1
+            }
+            min={0}
+            onChange={(value) =>
+              updateRoom(
+                "weight",
+                value,
+              )
+            }
+          />
+
         </div>
       </div>
 
@@ -241,6 +268,55 @@ export function RoomInspector({
                     direction,
                   )
                 }
+              />
+
+              {direction}
+            </label>
+          ))}
+
+        </div>
+
+      </div>
+
+      <div className="border-b border-white/10 p-3">
+
+        <div className="mb-1 text-xs font-semibold tracking-wider text-white/50">
+          BOUNDARY WALLS
+        </div>
+
+        <div className="mb-2 text-[11px] leading-relaxed text-white/35">
+          Unchecking a side stops the automatic outer wall there — turn all
+          four off for a corridor, which supplies its own walls around its
+          floor areas instead.
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+
+          {(
+            [
+              "N",
+              "S",
+              "E",
+              "W",
+            ] as Direction[]
+          ).map((direction) => (
+            <label
+              key={direction}
+              className="
+                flex
+                items-center
+                gap-2
+                rounded
+                bg-white/5
+                px-2
+                py-2
+                text-xs
+              "
+            >
+              <input
+                type="checkbox"
+                checked={hasBoundaryWall(direction)}
+                onChange={() => toggleBoundaryWall(direction)}
               />
 
               {direction}

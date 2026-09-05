@@ -7,14 +7,14 @@ import { RoomEditor } from "./editor/room/RoomEditor";
 import { AudioManager } from "./audio/AudioManager";
 import { SettingsScene } from "./scenes/SettingsScene";
 import { DungeonTutorial } from "./scenes/DungeonTutorial";
-import { DungeonEntrance } from "./scenes/DungeonEntrance";
 
 import menuUrl from "./assets/sound/music/Pineapple Under The Sea.ogg";
-import dungeonUrl from "./assets/sound/music/Wanderer's Tale.ogg";
-import bossUrl from "./assets/sound/music/Strange Worlds.ogg";
+import dungeonUrl from "./assets/sound/music/Distance full.wav";
+import bossUrl from "./assets/sound/music/02 Battle Theme 2.ogg";
+import gameOverUrl from "./assets/sound/music/08 Game Over.ogg";
 import { Player } from "./entities/Player";
 import { Team } from "./entities/Team";
-import { Dungeon_1 } from "./scenes/Dungeon_1";
+import { Level1 } from "./scenes/Level1";
 
 export function DungeonGame() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -65,6 +65,7 @@ export function DungeonGame() {
       audio.loadMusic("menu", menuUrl);
       audio.loadMusic("dungeon", dungeonUrl);
       audio.loadMusic("boss", bossUrl);
+      audio.loadMusic("gameOver", gameOverUrl);
 
       const beep = audio.createBeep(880, 0.09);
 
@@ -106,12 +107,12 @@ export function DungeonGame() {
         return;
       }
 
-      const startDungeon1 = (): void => {
+      const startLevel1 = (): void => {
         setShowRoomEditor(false);
 
-        const dungeon1 = new Dungeon_1(player);
+        const dungeon1 = new Level1(player);
 
-        dungeon1.onRestart = startDungeon1;
+        dungeon1.onRestart = startLevel1;
         dungeon1.onMainMenu = goToMenu;
         dungeon1.onExit = startTutorial;
 
@@ -119,21 +120,10 @@ export function DungeonGame() {
         void dungeon1.load();
       };
 
-      const startEntrance = (): void => {
-        const entrance = new DungeonEntrance(player);
-
-        entrance.onRestart = startEntrance;
-        entrance.onMainMenu = goToMenu;
-        entrance.onExit = startDungeon1;
-
-        engine.setScene(entrance);
-        void entrance.load();
-      };
-
       const startTutorial = (): void => {
         const tutorial = new DungeonTutorial(player);
 
-        tutorial.onExit = startEntrance;
+        tutorial.onExit = startLevel1;
         tutorial.onRestart = startTutorial;
         tutorial.onMainMenu = goToMenu;
 
@@ -141,7 +131,7 @@ export function DungeonGame() {
         void tutorial.load();
       };
 
-      startScene.onStart = startDungeon1;
+      startScene.onStart = startTutorial;
 
       startScene.onRoomEditor = () => {
         setShowRoomEditor(true);
