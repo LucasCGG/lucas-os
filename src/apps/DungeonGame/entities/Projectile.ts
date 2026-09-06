@@ -5,6 +5,9 @@ import { Team } from "./Team";
 import { EntityAttributes } from "../attributes/EntityAttributes";
 import { MoveStrategy } from "../sprites/strategies/MoveStrategy";
 import { GoStraightStrategy } from "../sprites/strategies/GoStraightStrategy";
+import { AudioManager } from "../audio/AudioManager";
+
+const IMPACT_SOUNDS = ["impact_1", "impact_2"];
 
 export interface ProjectileOptions {
   maxRange?: number;
@@ -97,6 +100,9 @@ export class Projectile extends Entity {
         const raw = this.currentDamage() - target.getDefense();
         target.modifyHealth(-Math.max(1, Math.round(raw)));
       }
+      AudioManager.get().playSound(
+        IMPACT_SOUNDS[Math.floor(Math.random() * IMPACT_SOUNDS.length)],
+      );
       this.stats.destroy();
     }
   }

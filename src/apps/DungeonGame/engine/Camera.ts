@@ -54,7 +54,7 @@ export class Camera {
     return { x: wx - this.x, y: wy - this.y };
   }
 
-  getViewBounds(): { x: number; y: number; w: number; h: number } {
-    return { x: this.x, y: this.y, w: this.viewWidth, h: this.viewHeight };
+  getViewBounds(viewWidth: number, viewHeight: number): { x: number; y: number; w: number; h: number } {
+    return { x: this.x, y: this.y, w: viewWidth, h: viewHeight };
   }
 }

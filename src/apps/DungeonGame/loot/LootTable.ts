@@ -9,6 +9,13 @@ import {
   Pistol,
   CrossBow,
 } from "../weapons/projectiles";
+import {
+  Dagger,
+  Sword,
+  Rapier,
+  Spear,
+  GreatSword,
+} from "../weapons/melee";
 
 interface LootEntry {
   weight: number;
@@ -66,4 +73,15 @@ export const DEFAULT_LOOT = new LootTable([
 
   // Rare 3%
   { weight: 3, weapon: Sniper.create },
+
+  // Melee - Common 10%
+  { weight: 5, weapon: Dagger.create },
+  { weight: 5, weapon: Sword.create },
+
+  // Melee - Uncommon 6%
+  { weight: 3, weapon: Rapier.create },
+  { weight: 3, weapon: Spear.create },
+
+  // Melee - Rare 2%
+  { weight: 2, weapon: GreatSword.create },
 ], [50, 150]);

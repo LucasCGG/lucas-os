@@ -5,13 +5,16 @@ import { Sprite } from "../sprites/Sprite";
 import { SpriteSheet } from "../sprites/SpriteSheet";
 import { Entity } from "./Entity";
 import { Projectile } from "./Projectile";
+import { MuzzleFlash } from "./MuzzleFlash";
 import { Team } from "./Team";
 import { EntityAttributes } from "../attributes/EntityAttributes";
 import { Weapon } from "../weapons/Weapon";
 import { TransformProvider } from "../weapons/TransformProvider";
+import { AudioManager } from "../audio/AudioManager";
 
 const PROJECTILE_SIZE = 28;
 const PROJECTILE_ANIM_SPEED = 0.08;
+const SHOOT_SOUNDS = ["shoot_1", "shoot_2", "shoot_3"];
 
 export abstract class ProjectileWeapon extends Weapon {
   protected readonly transformProvider: TransformProvider;
@@ -28,6 +31,7 @@ export abstract class ProjectileWeapon extends Weapon {
   protected minDamageFactor = 1;
   protected pellets = 1;
   protected spreadDegrees = 0;
+  protected muzzleFlashSheet: SpriteSheet | null = null;
 
   magazineSize = 29;
   reloadTime = 2.0;
@@ -88,6 +92,10 @@ export abstract class ProjectileWeapon extends Weapon {
     return !this.reloading && this.ammo > 0 && this.timeSinceShot >= this.cooldown;
   }
 
+  setMuzzleFlash(sheet: SpriteSheet | null): void {
+    this.muzzleFlashSheet = sheet;
+  }
+
   attack(): Entity[] {
     if (!this.canFire()) {
       if (this.ammo <= 0 && !this.reloading) {
@@ -99,8 +107,16 @@ export abstract class ProjectileWeapon extends Weapon {
     this.timeSinceShot = 0;
     this.ammo--;
 
+    AudioManager.get().playSound(
+      SHOOT_SOUNDS[Math.floor(Math.random() * SHOOT_SOUNDS.length)],
+    );
+
     const startPoint = this.transformProvider.getTransform();
     const shots: Entity[] = [];
+
+    if (this.muzzleFlashSheet !== null) {
+      shots.push(MuzzleFlash.create(this.muzzleFlashSheet, this.team, startPoint));
+    }
 
     for (let i = 0; i < this.pellets; i++) {
       const jitter = this.spreadDegrees === 0 ? 0 : (Math.random() - 0.5) * this.spreadDegrees;

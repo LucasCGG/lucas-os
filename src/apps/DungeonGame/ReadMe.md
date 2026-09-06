@@ -12,7 +12,7 @@ App based on my 2DGameEngine i've built in JAVA for my ZHAW project.
 
 [x] Multiple rooms as a level — but hardcoded first. Get room-to-room transitions working on a fixed map before you generate anything.
 
-[ ] Produce generation of the layout.
+[x] Produce generation of the layout.
 
 [ ] Upgrades / rewards after clearing rooms
 
@@ -33,6 +33,7 @@ Rapier (fast, low, long)
 Spear (medium, mid, long)
 
 ### Guns {speed(slow | mid | fast), damage(low | mid | high), accuracy(bad | mid | good), reach(tiny, mid, long)}
+
 Pistol (mid, mid, mid, mid)
 Rifle (fast, mid, good, mid)
 Shotgun (slow, high, bad, tiny)
@@ -43,6 +44,6 @@ Sniper(slow, high, good, long)
 Hand Cannon (slow, high, mid, high)
 
 ### Miscelenious {speed(slow | mid | fast), damage(low | mid | high), accuracy(bad | mid | good), reach(tiny, mid, long)}
+
 Fire Staff(mid, mid, good, long) damage over time (fire)
 Frost Wand(mid, mid, good, long) slows enemy
-

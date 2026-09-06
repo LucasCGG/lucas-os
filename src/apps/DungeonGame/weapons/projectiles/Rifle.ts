@@ -1,12 +1,14 @@
 import { ProjectileWeapon } from "../../entities/ProjectileWeapon";
 import { Team } from "../../entities/Team";
 import { TransformProvider } from "../TransformProvider";
-import { ensureProjectileSheet } from "../sprites/projectileSheet";
+import { ensureBulletSheet } from "../sprites/bulletSheet";
+import { ensureMuzzleFlashSheet } from "../sprites/muzzleFlashSheet";
 
 
 export class Rifle extends ProjectileWeapon {
   static async create(provider: TransformProvider, team: Team): Promise<Rifle> {
-    const gun = new Rifle(provider, team, ensureProjectileSheet());
+    const gun = new Rifle(provider, team, await ensureBulletSheet());
+    gun.setMuzzleFlash(await ensureMuzzleFlashSheet());
     gun.damage = 12;
     gun.projectileSpeed = 18;
     gun.cooldown = 0.12;

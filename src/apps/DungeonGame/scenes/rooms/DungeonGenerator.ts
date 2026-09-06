@@ -1,6 +1,7 @@
 import {
     Direction,
     OPPOSITE_DIRECTION,
+    roundUpToTile,
     RoomRotation,
     RoomTemplate,
     rotateDirection,
@@ -53,8 +54,8 @@ export class DungeonGenerator {
             cols,
             rows,
             rooms,
-            cellWidth: Math.max(...rooms.map((room) => room.template.width)),
-            cellHeight: Math.max(...rooms.map((room) => room.template.height)),
+            cellWidth: roundUpToTile(Math.max(...rooms.map((room) => room.template.width))),
+            cellHeight: roundUpToTile(Math.max(...rooms.map((room) => room.template.height))),
         };
     }
 
@@ -93,7 +94,7 @@ export class DungeonGenerator {
                 originY: 0,
             };
 
-            originX += template.width;
+            originX += roundUpToTile(template.width);
             return room;
         });
 

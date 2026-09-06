@@ -15,6 +15,9 @@ export class EntityAttributes
   protected defense: number;
   protected xpReward = 0;
 
+  private onDamaged: ((delta: number) => void) | null = null;
+  private onDeath: (() => void) | null = null;
+
   constructor(maxHealth: number, movementSpeed: number, damage: number, defense: number) {
     super();
     this.maxHealth = maxHealth;
@@ -33,14 +36,34 @@ export class EntityAttributes
   }
 
   setCurrentHealth(value: number): void {
+    const wasDestroyed = this.isDestroyed();
     this.currentHealth = Math.max(0, Math.min(value, this.maxHealth));
     if (this.currentHealth <= 0) {
       this.destroy();
+      if (!wasDestroyed) {
+        this.onDeath?.();
+      }
     }
   }
 
   modifyHealth(delta: number): void {
     this.setCurrentHealth(this.currentHealth + delta);
+    if (delta < 0 && !this.isDestroyed()) {
+      this.onDamaged?.(delta);
+    }
+  }
+
+  setOnDamaged(callback: ((delta: number) => void) | null): void {
+    this.onDamaged = callback;
+  }
+
+  setOnDeath(callback: (() => void) | null): void {
+    this.onDeath = callback;
+  }
+
+  override revive(): void {
+    super.revive();
+    this.currentHealth = this.maxHealth;
   }
 
   getDamage(): number {

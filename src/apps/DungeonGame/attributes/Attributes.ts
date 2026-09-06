@@ -34,4 +34,8 @@ export class Attributes {
   destroy(): void {
     this.destroyed = true;
   }
+
+  revive(): void {
+    this.destroyed = false;
+  }
 }

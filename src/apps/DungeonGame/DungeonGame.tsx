@@ -12,6 +12,36 @@ import menuUrl from "./assets/sound/music/Pineapple Under The Sea.ogg";
 import dungeonUrl from "./assets/sound/music/Distance full.wav";
 import bossUrl from "./assets/sound/music/02 Battle Theme 2.ogg";
 import gameOverUrl from "./assets/sound/music/08 Game Over.ogg";
+
+import stepStone1Url from "./assets/sound/_Generic_Human/Step_stone_1.wav";
+import stepStone2Url from "./assets/sound/_Generic_Human/Step_stone_2.wav";
+import stepStone3Url from "./assets/sound/_Generic_Human/Step_stone_3.wav";
+
+import shoot1Url from "./assets/sound/TechGunslinger/General_Animations/TechGunslinger_Shoot_1_Bullet_Only.ogg";
+import shoot2Url from "./assets/sound/TechGunslinger/General_Animations/TechGunslinger_Shoot_2_Bullet_Only.ogg";
+import shoot3Url from "./assets/sound/TechGunslinger/General_Animations/TechGunslinger_Shoot_3_Bullet_Only.ogg";
+import impact1Url from "./assets/sound/TechGunslinger/General_Animations/TechGunslinger_Projectile_Impact_1.ogg";
+import impact2Url from "./assets/sound/TechGunslinger/General_Animations/TechGunslinger_Projectile_Impact_2.ogg";
+
+import ninjaAttack1Url from "./assets/sound/NinjaAssassin/General_Moves/NinjaAssassin_Attack_1.ogg";
+import ninjaAttack2Url from "./assets/sound/NinjaAssassin/General_Moves/NinjaAssassin_Attack_2.ogg";
+import ninjaHurt1Url from "./assets/sound/NinjaAssassin/General_Moves/NinjaAssassin_Damage_1.ogg";
+import ninjaHurt2Url from "./assets/sound/NinjaAssassin/General_Moves/NinjaAssassin_Damage_2.ogg";
+import ninjaDeathUrl from "./assets/sound/NinjaAssassin/General_Moves/NinjaAssassin_Death.ogg";
+
+import bloodAttackUrl from "./assets/sound/BloodElemental/BloodElemental_Attack_1_Start.ogg";
+import bloodHurt1Url from "./assets/sound/BloodElemental/BloodElemental_Damage_1.ogg";
+import bloodHurt2Url from "./assets/sound/BloodElemental/BloodElemental_Damage_2.ogg";
+import bloodHurt3Url from "./assets/sound/BloodElemental/BloodElemental_Damage_3.ogg";
+import bloodDeathUrl from "./assets/sound/BloodElemental/BloodElemental_Banish-Die.ogg";
+
+import mageAttack1Url from "./assets/sound/BloodMage/General_Animations/BloodMage_Attack_1.ogg";
+import mageAttack2Url from "./assets/sound/BloodMage/General_Animations/BloodMage_Attack_2.ogg";
+import mageAttack3Url from "./assets/sound/BloodMage/General_Animations/BloodMage_Attack_3.ogg";
+import mageHurt1Url from "./assets/sound/BloodMage/General_Animations/BloodMage_Damage_1.ogg";
+import mageHurt2Url from "./assets/sound/BloodMage/General_Animations/BloodMage_Damage_2.ogg";
+import mageDeathUrl from "./assets/sound/BloodMage/General_Animations/BloodMage_Death.ogg";
+
 import { Player } from "./entities/Player";
 import { Team } from "./entities/Team";
 import { Level1 } from "./scenes/Level1";
@@ -73,6 +103,37 @@ export function DungeonGame() {
         audio.loadSoundBuffer("ding", beep);
       }
 
+      void Promise.all([
+        audio.loadSound("step_stone_1", stepStone1Url),
+        audio.loadSound("step_stone_2", stepStone2Url),
+        audio.loadSound("step_stone_3", stepStone3Url),
+
+        audio.loadSound("shoot_1", shoot1Url),
+        audio.loadSound("shoot_2", shoot2Url),
+        audio.loadSound("shoot_3", shoot3Url),
+        audio.loadSound("impact_1", impact1Url),
+        audio.loadSound("impact_2", impact2Url),
+
+        audio.loadSound("ninja_attack_1", ninjaAttack1Url),
+        audio.loadSound("ninja_attack_2", ninjaAttack2Url),
+        audio.loadSound("ninja_hurt_1", ninjaHurt1Url),
+        audio.loadSound("ninja_hurt_2", ninjaHurt2Url),
+        audio.loadSound("ninja_death", ninjaDeathUrl),
+
+        audio.loadSound("blood_attack", bloodAttackUrl),
+        audio.loadSound("blood_hurt_1", bloodHurt1Url),
+        audio.loadSound("blood_hurt_2", bloodHurt2Url),
+        audio.loadSound("blood_hurt_3", bloodHurt3Url),
+        audio.loadSound("blood_death", bloodDeathUrl),
+
+        audio.loadSound("mage_attack_1", mageAttack1Url),
+        audio.loadSound("mage_attack_2", mageAttack2Url),
+        audio.loadSound("mage_attack_3", mageAttack3Url),
+        audio.loadSound("mage_hurt_1", mageHurt1Url),
+        audio.loadSound("mage_hurt_2", mageHurt2Url),
+        audio.loadSound("mage_death", mageDeathUrl),
+      ]);
+
       audio.playMusic("menu");
 
       window.removeEventListener("pointerdown", onGesture);
@@ -110,6 +171,8 @@ export function DungeonGame() {
       const startLevel1 = (): void => {
         setShowRoomEditor(false);
 
+        player.getStats().revive();
+
         const dungeon1 = new Level1(player);
 
         dungeon1.onRestart = startLevel1;
@@ -121,6 +184,8 @@ export function DungeonGame() {
       };
 
       const startTutorial = (): void => {
+        player.getStats().revive();
+
         const tutorial = new DungeonTutorial(player);
 
         tutorial.onExit = startLevel1;

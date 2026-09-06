@@ -3,7 +3,11 @@ import { Team } from "../../entities/Team";
 import { TransformProvider } from "../TransformProvider";
 
 export class GreatSword extends MeleeWeapon {
-  static async create(provider: TransformProvider, team: Team, targetProvider: MeleeTargetProvider): Promise<GreatSword> {
+  static async create(
+    provider: TransformProvider,
+    team: Team,
+    targetProvider: MeleeTargetProvider = { getTargets: () => [] },
+  ): Promise<GreatSword> {
     const weapon = new GreatSword(
       provider,
       team,

@@ -4,6 +4,8 @@ import { loadCharacter } from "../objects/utils/loadCharacter";
 import { Team } from "./Team";
 import { EntityAttributes } from "../attributes/EntityAttributes";
 import { SimpleBow } from "../weapons/projectiles/SimpleBow";
+import { getCharacterFrameSize, randomEnemySkin } from "./characterSkins";
+import { attachEnemyVoice, randomEnemyVoice } from "../audio/EnemyVoice";
 
 interface ArcherCreateOptions {
   name: string;
@@ -11,6 +13,7 @@ interface ArcherCreateOptions {
   team: Team;
   xpReward?: number;
   enemyStats?: EntityAttributes;
+  characterId?: string;
 }
 
 export class ArcherEnemy extends Enemy {
@@ -27,12 +30,16 @@ export class ArcherEnemy extends Enemy {
       team,
       xpReward,
       enemyStats,
+      characterId,
     } = options;
 
+    const skin = characterId ?? randomEnemySkin("Projectile");
+    const frameSize = getCharacterFrameSize(skin);
+
     const sheets = await loadCharacter(
-      "6",
-      72,
-      72,
+      skin,
+      frameSize.width,
+      frameSize.height,
     );
 
     const stats =
@@ -55,6 +62,8 @@ export class ArcherEnemy extends Enemy {
       team,
       stats,
     );
+
+    attachEnemyVoice(stats, randomEnemyVoice(), () => enemy.playHurt(), () => enemy.playDeath());
 
     /*
      * ProjectileWeapon expects a TransformProvider object.

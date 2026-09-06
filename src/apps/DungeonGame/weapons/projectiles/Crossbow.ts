@@ -2,11 +2,11 @@
 import { ProjectileWeapon } from "../../entities/ProjectileWeapon";
 import { Team } from "../../entities/Team";
 import { TransformProvider } from "../TransformProvider";
-import { ensureProjectileSheet } from "../sprites/projectileSheet";
+import { ensureArrowSheet } from "../sprites/arrowSheet";
 
 export class CrossBow extends ProjectileWeapon {
   static async create(provider: TransformProvider, team: Team): Promise<CrossBow> {
-    const gun = new CrossBow(provider, team, ensureProjectileSheet());
+    const gun = new CrossBow(provider, team, await ensureArrowSheet());
     gun.damage = 45;
     gun.projectileSpeed = 22;
     gun.cooldown = 0.75;

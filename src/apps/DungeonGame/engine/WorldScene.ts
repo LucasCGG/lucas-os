@@ -27,6 +27,8 @@ import {
     RoomTemplate,
     RoomRotation,
     RoomWall,
+    FLOOR_TILE_SIZE,
+    roundToTile,
     rotateDirection,
     rotatePoint,
     rotateRect,
@@ -62,7 +64,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
     private floorSheet: ImageSource | null = null;
     private waterSheet: ImageSource | null = null;
 
-    private readonly floorTileSize = 16;
+    private readonly floorTileSize = FLOOR_TILE_SIZE;
 
     private readonly floorTiles: [number, number][] = [
         [4, 7],
@@ -74,6 +76,9 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
     protected enemies: Enemy[] = [];
     protected projectiles: Entity[] = [];
+
+    /** Tracks which dead enemies already paid out XP, since they now linger for their death animation. */
+    private readonly xpAwardedTo = new WeakSet<Enemy>();
 
     protected paused = false;
     protected pause = new PauseScreen();
@@ -382,15 +387,21 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
     }
 
     protected updateEnemyDeaths(): void {
-        const before = this.enemies;
-
-        this.enemies = this.enemies.filter((enemy) => !enemy.getStats().isDestroyed());
-
-        for (const enemy of before) {
-            if (enemy.getStats().isDestroyed()) {
+        for (const enemy of this.enemies) {
+            if (enemy.getStats().isDestroyed() && !this.xpAwardedTo.has(enemy)) {
+                this.xpAwardedTo.add(enemy);
                 this.player?.getStats().gainExperience(enemy.getStats().getXpReward());
             }
         }
+
+        /*
+         * Dead enemies stay around (frozen, playing their death animation —
+         * see Enemy.playDeath()) until it finishes, instead of vanishing
+         * the instant their health hits 0.
+         */
+        this.enemies = this.enemies.filter(
+            (enemy) => !enemy.getStats().isDestroyed() || !enemy.isReadyForRemoval(),
+        );
     }
 
     protected handlePause(): boolean {
@@ -483,7 +494,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
         const tile = this.floorTileSize;
 
-        const view = this.camera.getViewBounds();
+        const view = this.camera.getViewBounds(this.width, this.height);
 
         const startX = Math.max(0, Math.floor(view.x / tile) * tile);
 
@@ -758,6 +769,10 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         if (this.keys.isKeyJustPressed("KeyI")) {
             this.characterOpen = !this.characterOpen;
         }
+
+        if (this.keys.isKeyJustPressed("KeyK")) {
+            this.player?.getStats().destroy();
+        }
     }
 
     protected updateWorld(deltaTime: number): void {
@@ -1024,8 +1039,8 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         const cellY = room.gridY * cellHeight;
 
         return {
-            x: cellX + (cellWidth - this.roomWidth(room)) / 2,
-            y: cellY + (cellHeight - this.roomHeight(room)) / 2,
+            x: cellX + roundToTile((cellWidth - this.roomWidth(room)) / 2),
+            y: cellY + roundToTile((cellHeight - this.roomHeight(room)) / 2),
         };
     }
 

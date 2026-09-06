@@ -1,6 +1,14 @@
 export type Direction = "N" | "S" | "E" | "W";
 export type RoomRotation = 0 | 90 | 180 | 270;
 
+export const FLOOR_TILE_SIZE = 16;
+
+export const roundUpToTile = (value: number): number =>
+    Math.ceil(value / FLOOR_TILE_SIZE) * FLOOR_TILE_SIZE;
+
+export const roundToTile = (value: number): number =>
+    Math.round(value / FLOOR_TILE_SIZE) * FLOOR_TILE_SIZE;
+
 export const OPPOSITE_DIRECTION: Record<Direction, Direction> = {
     N: "S",
     S: "N",

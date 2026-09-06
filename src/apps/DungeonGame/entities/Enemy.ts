@@ -7,8 +7,11 @@ import { CharacterSheets } from "../objects/utils/loadCharacter";
 import { Team } from "./Team";
 import { EntityAttributes } from "../attributes/EntityAttributes";
 import { EntityDelegator } from "../weapons/EntityDelegator";
+import { Footsteps } from "../audio/Footsteps";
 
 const ENEMY_ANIMATION_SPEED = 0.1;
+const HURT_ANIMATION_SPEED = 0.08;
+const DEATH_ANIMATION_SPEED = 0.12;
 
 type Facing = "front" | "left" | "right" | "back";
 
@@ -31,6 +34,12 @@ export abstract class Enemy extends Entity {
   private blockedCheck: ((t: Transform) => boolean) | null = null;
   protected delegator: EntityDelegator | null = null;
 
+  private readonly footsteps = new Footsteps();
+
+  private readonly hasHurtAnim: boolean;
+  private readonly hasDeathAnim: boolean;
+  private dying = false;
+
   protected constructor(
     name: string,
     transform: Transform,
@@ -49,11 +58,33 @@ export abstract class Enemy extends Entity {
     animator.addAnimation(new Animation("walk_back", sheets.walk, [12, 13, 14, 15], ENEMY_ANIMATION_SPEED, true));
     animator.play("idle_front");
 
+    let hasHurtAnim = false;
+    if (sheets.hurt) {
+      const { sheet, framesPerRow } = sheets.hurt;
+      const rightFrames = Array.from({ length: framesPerRow }, (_, i) => i);
+      const leftFrames = Array.from({ length: framesPerRow }, (_, i) => i + framesPerRow);
+      animator.addAnimation(new Animation("hurt_right", sheet, rightFrames, HURT_ANIMATION_SPEED, false));
+      animator.addAnimation(new Animation("hurt_left", sheet, leftFrames, HURT_ANIMATION_SPEED, false));
+      hasHurtAnim = true;
+    }
+
+    let hasDeathAnim = false;
+    if (sheets.death) {
+      const { sheet, framesPerRow } = sheets.death;
+      const rightFrames = Array.from({ length: framesPerRow }, (_, i) => i);
+      const leftFrames = Array.from({ length: framesPerRow }, (_, i) => i + framesPerRow);
+      animator.addAnimation(new Animation("death_right", sheet, rightFrames, DEATH_ANIMATION_SPEED, false));
+      animator.addAnimation(new Animation("death_left", sheet, leftFrames, DEATH_ANIMATION_SPEED, false));
+      hasDeathAnim = true;
+    }
+
     const sprite = new Sprite("enemySprite", animator, transform, false);
     super(name, transform, stats, sprite, team);
 
     this.stats = stats;
     this.animator = animator;
+    this.hasHurtAnim = hasHurtAnim;
+    this.hasDeathAnim = hasDeathAnim;
   }
 
   setTarget(entity: Entity): void {
@@ -68,8 +99,43 @@ export abstract class Enemy extends Entity {
     this.delegator = delegator;
   }
 
+  playHurt(): void {
+    if (!this.hasHurtAnim || this.dying) {
+      return;
+    }
+    this.animator.play(`hurt_${this.facing === "left" ? "left" : "right"}`);
+  }
+
+  playDeath(): void {
+    if (this.dying) {
+      return;
+    }
+    this.dying = true;
+    this.vx = 0;
+    this.vy = 0;
+    if (this.hasDeathAnim) {
+      this.animator.play(`death_${this.facing === "left" ? "left" : "right"}`);
+    }
+  }
+
+  isDying(): boolean {
+    return this.dying;
+  }
+
+  isReadyForRemoval(): boolean {
+    if (!this.dying) {
+      return false;
+    }
+    return !this.hasDeathAnim || this.animator.isFinished();
+  }
+
   update(deltaTime: number): void {
     if (!this.active) {
+      return;
+    }
+
+    if (this.dying) {
+      this.sprite?.update(deltaTime);
       return;
     }
 
@@ -108,8 +174,17 @@ export abstract class Enemy extends Entity {
 
     this.behave(deltaTime, dist);
 
+    const currentName = this.animator.getCurrentName();
+    const hurtPlaying =
+      this.hasHurtAnim &&
+      (currentName === "hurt_left" || currentName === "hurt_right") &&
+      !this.animator.isFinished();
 
-    this.animator.play(`${moving ? "walk" : "idle"}_${this.facing}`);
+    if (!hurtPlaying) {
+      this.animator.play(`${moving ? "walk" : "idle"}_${this.facing}`);
+    }
+
+    this.footsteps.update(deltaTime, moving);
     this.sprite?.update(deltaTime);
   }
 

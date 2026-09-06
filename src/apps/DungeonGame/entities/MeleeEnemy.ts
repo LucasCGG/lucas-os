@@ -5,6 +5,8 @@ import { Team } from "./Team";
 import { EntityAttributes } from "../attributes/EntityAttributes";
 import { Sword } from "../weapons/melee/Sword";
 import { MeleeTargetProvider } from "../entities/MeleeWeapon";
+import { getCharacterFrameSize, randomEnemySkin } from "./characterSkins";
+import { attachEnemyVoice, pickAttackSound, randomEnemyVoice } from "../audio/EnemyVoice";
 
 interface MeleeCreateOptions {
   name: string;
@@ -12,6 +14,7 @@ interface MeleeCreateOptions {
   team: Team;
   xpReward?: number;
   enemyStats?: EntityAttributes;
+  characterId?: string;
 }
 
 export class MeleeEnemy extends Enemy {
@@ -28,12 +31,16 @@ export class MeleeEnemy extends Enemy {
       team,
       xpReward,
       enemyStats,
+      characterId,
     } = options;
 
+    const skin = characterId ?? randomEnemySkin("Melee");
+    const frameSize = getCharacterFrameSize(skin);
+
     const sheets = await loadCharacter(
-      "6",
-      72,
-      72,
+      skin,
+      frameSize.width,
+      frameSize.height,
     );
 
     const stats =
@@ -56,6 +63,9 @@ export class MeleeEnemy extends Enemy {
       team,
       stats,
     );
+
+    const voice = randomEnemyVoice();
+    attachEnemyVoice(stats, voice, () => enemy.playHurt(), () => enemy.playDeath());
 
     /*
      * Melee weapons expect a TransformProvider object,
@@ -82,6 +92,8 @@ export class MeleeEnemy extends Enemy {
       team,
       targetProvider,
     );
+
+    weapon.setAttackSounds(pickAttackSound(voice));
 
     enemy.weapon = weapon;
 

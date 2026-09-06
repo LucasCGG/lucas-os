@@ -8,16 +8,19 @@ import {
   loadCharacter,
 } from "../objects/utils/loadCharacter";
 import { Team } from "./Team";
+import { getCharacterFrameSize } from "./characterSkins";
 import { PlayerAttributes } from "../attributes/PlayerAttributes";
 import { Weapon } from "../weapons/Weapon";
 import { Pistol } from "../weapons/projectiles/Pistol";
 import { Sword } from "../weapons";
 import { MeleeTargetProvider, MeleeWeapon } from "./MeleeWeapon";
+import { Footsteps } from "../audio/Footsteps";
 
 const PLAYER_ANIMATION_SPEED = 0.1;
 const REGEN_INTERVAL = 8;
 const REGEN_PER_INTERVAL = 1;
 const PLAYER_BASE_DAMAGE = 40;
+const PLAYER_MELEE_ATTACK_SOUNDS = ["ninja_attack_1", "ninja_attack_2"];
 
 type Facing = "front" | "left" | "right" | "back";
 
@@ -52,6 +55,8 @@ export class Player extends Entity {
   private meleeTargetProvider: MeleeTargetProvider = {
     getTargets: () => [],
   };
+
+  private readonly footsteps = new Footsteps();
 
   private constructor(
     name: string,
@@ -180,10 +185,13 @@ export class Player extends Entity {
     transform: Transform,
     team: Team,
   ): Promise<Player> {
+    const playerSkin = "1";
+    const frameSize = getCharacterFrameSize(playerSkin);
+
     const sheets = await loadCharacter(
-      "1",
-      72,
-      72,
+      playerSkin,
+      frameSize.width,
+      frameSize.height,
     );
 
     const player = new Player(
@@ -227,6 +235,8 @@ export class Player extends Entity {
       team,
       player.meleeTargetProvider,
     );
+
+    sword.setAttackSounds(PLAYER_MELEE_ATTACK_SOUNDS);
 
     player.weapons = [
       baseGun,
@@ -404,6 +414,8 @@ export class Player extends Entity {
       `${moving ? "walk" : "idle"}_${this.facingFromRotation()}`,
     );
 
+    this.footsteps.update(deltaTime, moving);
+
     /*
      * Debug XP.
      */
@@ -503,6 +515,9 @@ export class Player extends Entity {
     if (weapon instanceof MeleeWeapon) {
       weapon.setTargetProvider(
         this.meleeTargetProvider,
+      );
+      weapon.setAttackSounds(
+        PLAYER_MELEE_ATTACK_SOUNDS,
       );
     }
 

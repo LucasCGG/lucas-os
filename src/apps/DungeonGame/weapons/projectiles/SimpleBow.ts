@@ -1,11 +1,11 @@
 import { ProjectileWeapon } from "../../entities/ProjectileWeapon";
 import { Team } from "../../entities/Team";
 import { TransformProvider } from "../TransformProvider";
-import { ensureProjectileSheet } from "../sprites/projectileSheet";
+import { ensureArrowSheet } from "../sprites/arrowSheet";
 
 export class SimpleBow extends ProjectileWeapon {
   static async create(provider: TransformProvider, team: Team): Promise<SimpleBow> {
-    const gun = new SimpleBow(provider, team, ensureProjectileSheet());
+    const gun = new SimpleBow(provider, team, await ensureArrowSheet());
     gun.damage = 22;
     gun.projectileSpeed = 15;
     gun.cooldown = 0.75;

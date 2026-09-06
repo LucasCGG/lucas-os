@@ -4,7 +4,11 @@ import { Team } from "../../entities/Team";
 import { TransformProvider } from "../TransformProvider";
 
 export class Dagger extends MeleeWeapon {
-  static async create(provider: TransformProvider, team: Team, targetProvider: MeleeTargetProvider): Promise<Dagger> {
+  static async create(
+    provider: TransformProvider,
+    team: Team,
+    targetProvider: MeleeTargetProvider = { getTargets: () => [] },
+  ): Promise<Dagger> {
     const weapon = new Dagger(
       provider,
       team,

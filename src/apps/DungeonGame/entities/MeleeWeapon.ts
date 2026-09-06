@@ -4,6 +4,7 @@ import { Entity } from "../entities/Entity";
 import { Team } from "../entities/Team";
 import { TransformProvider } from "../weapons/TransformProvider";
 import { Weapon } from "../weapons/Weapon";
+import { AudioManager } from "../audio/AudioManager";
 
 export interface MeleeTargetProvider {
   getTargets(): Entity[];
@@ -17,6 +18,8 @@ export abstract class MeleeWeapon extends Weapon {
   protected cooldown = 0.5;
   protected range = 60;
   protected targetProvider: MeleeTargetProvider;
+
+  private attackSounds: string[] | null = null;
 
   /**
    * Attack cone in degrees.
@@ -69,12 +72,21 @@ export abstract class MeleeWeapon extends Weapon {
     this.targetProvider = provider;
   }
 
+  setAttackSounds(sounds: string[] | null): void {
+    this.attackSounds = sounds;
+  }
+
   attack(): Entity[] {
     if (!this.canAttack()) {
       return [];
     }
 
     this.timeSinceAttack = 0;
+
+    if (this.attackSounds !== null && this.attackSounds.length > 0) {
+      const sound = this.attackSounds[Math.floor(Math.random() * this.attackSounds.length)];
+      AudioManager.get().playSound(sound);
+    }
 
     const attackerTransform = this.transformProvider.getTransform();
     const targets = this.targetProvider.getTargets();
