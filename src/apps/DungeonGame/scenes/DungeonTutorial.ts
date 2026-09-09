@@ -1,7 +1,6 @@
 import { WorldScene } from "../engine/WorldScene";
 import { Player } from "../entities/Player";
 import { Spawner } from "../utils/spawner";
-import { OverlayHelper } from "../ui/overlay/OverlayHelper";
 
 import { Wall } from "../objects/Wall";
 import { ExitPad } from "../objects/ExitPad";
@@ -272,12 +271,7 @@ export class DungeonTutorial extends WorldScene {
 
     this.renderExit(ctx);
 
-    OverlayHelper.renderPlayerOverlay(
-      ctx,
-      this.player!,
-      this.width,
-      this.height,
-    );
+    this.renderPlayerOverlay(ctx);
 
     if (this.characterOpen) {
       this.characterScreen.draw(

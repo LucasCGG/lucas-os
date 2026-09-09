@@ -1,6 +1,6 @@
 import { GameScene } from "../engine/GameScene";
-import { KeyListener } from "../engine/KeyListener";
-import { MouseListener } from "../engine/MouseListener";
+import { KeyListener } from "../engine/input/KeyListener";
+import { MouseListener } from "../engine/input/MouseListener";
 import { SettingsPanel } from "../ui/settings/SettingsPanel";
 import { Button } from "../ui/Button";
 

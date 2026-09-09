@@ -3,7 +3,6 @@ import { Player } from "../entities/Player";
 import { Wall } from "../objects/Wall";
 import { ExitPad } from "../objects/ExitPad";
 import { Spawner } from "../utils/spawner";
-import { OverlayHelper } from "../ui/overlay/OverlayHelper";
 import { DEFAULT_LOOT } from "../loot/LootTable";
 
 import wallSheetUrl from "../assets/environment/Dungeon_1/Dungeon_1.png";
@@ -213,9 +212,7 @@ export class Level1 extends WorldScene {
 
         this.renderExit(ctx);
 
-        if (this.player !== null) {
-            OverlayHelper.renderPlayerOverlay(ctx, this.player, this.width, this.height);
-        }
+        this.renderPlayerOverlay(ctx);
 
         if (this.characterOpen && this.player !== null) {
             this.characterScreen.draw(ctx, this.player, this.width, this.height);

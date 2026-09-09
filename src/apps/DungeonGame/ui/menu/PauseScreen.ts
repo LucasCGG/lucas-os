@@ -1,10 +1,15 @@
 import { AudioManager } from "../../audio/AudioManager";
 import { Button } from "../Button";
+import { useIsMobileDevice } from "../../../../hooks";
 
 type PauseAction = "resume" | "start";
 
+const COMPACT = useIsMobileDevice();
+const COMPACT_BUTTON_STYLE = COMPACT ? { font: "bold 13px monospace" } : {};
+
 export class PauseScreen {
   private static readonly TITLE = "Paused";
+  private readonly compact = COMPACT;
 
   private rows: {
     label: string;
@@ -22,8 +27,8 @@ export class PauseScreen {
   private draggingRow = -1;
 
   private buttons: Button<PauseAction>[] = [
-    new Button<PauseAction>("resume", "RESUME"),
-    new Button<PauseAction>("start", "START SCREEN"),
+    new Button<PauseAction>("resume", "RESUME", COMPACT_BUTTON_STYLE),
+    new Button<PauseAction>("start", "START SCREEN", COMPACT_BUTTON_STYLE),
   ];
 
   constructor(
@@ -150,26 +155,29 @@ export class PauseScreen {
       height,
     );
 
+    const titleY = this.compact ? 22 : height * 0.22;
+
     ctx.textAlign = "center";
     ctx.fillStyle = "#ffffff";
-    ctx.font =
-      "bold 44px Arial";
+    ctx.font = this.compact
+      ? "bold 20px Arial"
+      : "bold 44px Arial";
     ctx.fillText(
       PauseScreen.TITLE,
       width / 2,
-      height * 0.22,
+      titleY,
     );
 
-    const barW = 320;
-    const barH = 16;
-    const rowGap = 46;
-    const startY = height * 0.4;
+    const barW = this.compact ? 220 : 320;
+    const barH = this.compact ? 10 : 16;
+    const rowGap = this.compact ? 26 : 46;
+    const startY = this.compact ? titleY + 24 : height * 0.4;
     const barX =
       width / 2 - barW / 2;
 
     this.barRects = [];
 
-    ctx.font = "16px Arial";
+    ctx.font = this.compact ? "11px Arial" : "16px Arial";
 
     for (
       let i = 0;
@@ -250,9 +258,9 @@ export class PauseScreen {
       });
     }
 
-    const bw = 260;
-    const bh = 54;
-    const gap = 16;
+    const bw = this.compact ? 190 : 260;
+    const bh = this.compact ? 32 : 54;
+    const gap = this.compact ? 8 : 16;
 
     const totalHeight =
       this.buttons.length *
@@ -264,7 +272,7 @@ export class PauseScreen {
       startY +
       this.rows.length *
         rowGap +
-      30;
+      (this.compact ? 14 : 30);
 
     const x =
       width / 2 - bw / 2;
@@ -285,15 +293,18 @@ export class PauseScreen {
     ctx.fillStyle =
       "#9aa0aa";
 
-    ctx.font =
-      "16px Arial";
+    ctx.font = this.compact
+      ? "10px Arial"
+      : "16px Arial";
 
     ctx.textAlign = "center";
 
     ctx.fillText(
-      "Drag a bar to set volume · Esc or Resume to continue",
+      this.compact
+        ? "Drag a bar to set volume"
+        : "Drag a bar to set volume · Esc or Resume to continue",
       width / 2,
-      height * 0.82,
+      this.compact ? buttonStartY + totalHeight + 16 : height * 0.82,
     );
   }
 

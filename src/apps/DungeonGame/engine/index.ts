@@ -1,6 +1,6 @@
 export * from "./Tranform";
 export * from "./Time";
-export * from "./KeyListener";
+export * from "./input/KeyListener";
 export * from "./GameScene";
 export * from "./GameObject";
 export * from "./Engine";

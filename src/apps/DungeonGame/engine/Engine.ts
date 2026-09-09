@@ -1,5 +1,5 @@
 import { GameScene } from "./GameScene";
-import { KeyListener } from "./KeyListener";
+import { KeyListener } from "./input/KeyListener";
 import { Time } from "./Time";
 
 export class Engine {

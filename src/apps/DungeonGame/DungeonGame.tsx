@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Engine, KeyListener, Transform } from "./engine";
-import { MouseListener } from "./engine/MouseListener";
+import { MouseListener } from "./engine/input/MouseListener";
 import { StartScene } from "./scenes/StartScene";
 import { SpriteSheetInspector } from "./editor/SpriteSheetInspector";
 import { RoomEditor } from "./editor/room/RoomEditor";
@@ -45,13 +45,26 @@ import mageDeathUrl from "./assets/sound/BloodMage/General_Animations/BloodMage_
 import { Player } from "./entities/Player";
 import { Team } from "./entities/Team";
 import { Level1 } from "./scenes/Level1";
+import { useIsMobile } from "../../hooks";
+import { TouchListener } from "./engine/input/TouchListener";
+import { useLandscapeLock } from "../../hooks/useLandscapeLock";
+import { MobileHud } from "./ui/mobile/MobileHud";
+import { RotatePrompt } from "./ui/mobile/RotatePrompt";
+import { useWindowStore } from "../../atoms";
 
 export function DungeonGame() {
+  const isMobile = useIsMobile();
+  const closeApp = useWindowStore((state) => state.closeApp);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [wrapEl, setWrapEl] = useState<HTMLDivElement | null>(null);
 
   const [showInspector, setShowInspector] = useState(false);
   const [showRoomEditor, setShowRoomEditor] = useState(false);
+  const [inGame, setInGame] = useState(false);
+
+  const isPortrait = useLandscapeLock(isMobile, wrapEl);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -68,6 +81,7 @@ export function DungeonGame() {
 
     const goToMenu = (): void => {
       setShowRoomEditor(false);
+      setInGame(false);
       AudioManager.get().playMusic("menu");
       engine.setScene(startScene);
     };
@@ -85,8 +99,18 @@ export function DungeonGame() {
     observer.observe(wrap);
     resize();
 
-    const detachKeys = KeyListener.get().attach(canvas);
-    const detachMouse = MouseListener.get().attach(canvas);
+    let detachTouch = null;
+    let detachKeys = null;
+    let detachMouse = null;
+
+    if (isMobile) {
+      detachTouch = TouchListener.get().attach(canvas);
+      detachMouse = MouseListener.get().attachTouch(canvas);
+    } else {
+      detachKeys = KeyListener.get().attach(canvas);
+      detachMouse = MouseListener.get().attach(canvas);
+    }
+
 
     const onGesture = (): void => {
       const audio = AudioManager.get();
@@ -170,6 +194,7 @@ export function DungeonGame() {
 
       const startLevel1 = (): void => {
         setShowRoomEditor(false);
+        setInGame(true);
 
         player.getStats().revive();
 
@@ -184,6 +209,8 @@ export function DungeonGame() {
       };
 
       const startTutorial = (): void => {
+        setInGame(true);
+
         player.getStats().revive();
 
         const tutorial = new DungeonTutorial(player);
@@ -212,6 +239,10 @@ export function DungeonGame() {
         engine.setScene(settings);
       };
 
+      startScene.onQuit = () => {
+        closeApp("dungeon");
+      };
+
       engine.setScene(startScene);
 
       engine.start();
@@ -225,8 +256,9 @@ export function DungeonGame() {
 
       engine.stop();
 
-      detachKeys();
-      detachMouse();
+      detachKeys?.();
+      detachMouse?.();
+      detachTouch?.();
 
       observer.disconnect();
 
@@ -242,15 +274,20 @@ export function DungeonGame() {
 
   return (
     <div
-      ref={wrapRef}
+      ref={(el) => {
+        wrapRef.current = el;
+        setWrapEl(el);
+      }}
       className="absolute inset-0 overflow-hidden bg-[#0e0e12]"
     >
       <canvas
         ref={canvasRef}
         tabIndex={0}
         onMouseDown={(e) => e.currentTarget.focus()}
-        className="absolute inset-0 h-full w-full outline-none"
+        className="absolute inset-0 h-full w-full outline-none touch-none select-none"
       />
+
+      {isMobile && inGame && !showRoomEditor && !showInspector && <MobileHud />}
 
       {showInspector && !showRoomEditor && (
         <SpriteSheetInspector
@@ -266,6 +303,8 @@ export function DungeonGame() {
           }}
         />
       )}
+
+      {isMobile && isPortrait && <RotatePrompt />}
     </div>
   );
 }

@@ -63,5 +63,6 @@ export const appsRegistry = {
         icon: "icn-2048-app",
         defaultSize: { width: 820, height: 620 },
         pinned: true,
+        mobileImmersive: true,
     },
 };

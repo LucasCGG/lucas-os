@@ -18,7 +18,7 @@ import { Footsteps } from "../audio/Footsteps";
 
 const PLAYER_ANIMATION_SPEED = 0.1;
 const REGEN_INTERVAL = 8;
-const REGEN_PER_INTERVAL = 1;
+const REGEN_PER_INTERVAL = 0.5;
 const PLAYER_BASE_DAMAGE = 40;
 const PLAYER_MELEE_ATTACK_SOUNDS = ["ninja_attack_1", "ninja_attack_2"];
 
@@ -28,12 +28,17 @@ export class Player extends Entity {
   vx = 0;
   vy = 0;
 
-  private readonly keys = KeyListener.get();
   private readonly animator: Animator;
   private readonly stats: PlayerAttributes;
 
+  private moveInputX = 0;
+  private moveInputY = 0;
+
+
   private inputRotation = 0;
   private updateCounter = 0;
+
+  private switchWeaponRequested = false;
 
   private aimTarget: {
     x: number;
@@ -276,6 +281,11 @@ export class Player extends Entity {
       this.weapons.length;
   }
 
+  setMovementInput(x: number, y: number): void{
+    this.moveInputX = x;
+    this.moveInputY = y;
+  }
+
   /**
    * Change the entities that the player's melee weapons can attack.
    *
@@ -324,37 +334,10 @@ export class Player extends Entity {
     );
   }
 
+
   update(deltaTime: number): void {
-    let dx = 0;
-    let dy = 0;
-
-    if (
-      this.keys.isKeyDown("KeyW") ||
-      this.keys.isKeyDown("ArrowUp")
-    ) {
-      dy -= 1;
-    }
-
-    if (
-      this.keys.isKeyDown("KeyS") ||
-      this.keys.isKeyDown("ArrowDown")
-    ) {
-      dy += 1;
-    }
-
-    if (
-      this.keys.isKeyDown("KeyA") ||
-      this.keys.isKeyDown("ArrowLeft")
-    ) {
-      dx -= 1;
-    }
-
-    if (
-      this.keys.isKeyDown("KeyD") ||
-      this.keys.isKeyDown("ArrowRight")
-    ) {
-      dx += 1;
-    }
+    let dx = this.moveInputX;
+    let dy = this.moveInputY;
 
     /*
      * Tick every weapon regardless of which one is currently
@@ -362,10 +345,6 @@ export class Player extends Entity {
      */
     for (const weapon of this.weapons) {
       weapon.tick(deltaTime);
-    }
-
-    if (this.keys.isKeyJustPressed("KeyQ")) {
-      this.switchWeapon();
     }
 
     const moving =
@@ -415,15 +394,6 @@ export class Player extends Entity {
     );
 
     this.footsteps.update(deltaTime, moving);
-
-    /*
-     * Debug XP.
-     */
-    if (
-      this.keys.isKeyJustPressed("KeyL")
-    ) {
-      this.stats.gainExperience(200);
-    }
 
     /*
      * Passive regeneration.

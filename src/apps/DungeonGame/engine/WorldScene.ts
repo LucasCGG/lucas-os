@@ -6,8 +6,8 @@ import { Wall } from "../objects/Wall";
 import { Entity } from "../entities/Entity";
 import { Projectile } from "../entities/Projectile";
 import { EntityDelegator } from "../weapons/EntityDelegator";
-import { KeyListener } from "../engine/KeyListener";
-import { MouseListener } from "../engine/MouseListener";
+import { KeyListener } from "./input/KeyListener";
+import { MouseListener } from "./input/MouseListener";
 import { PauseScreen } from "../ui/menu/PauseScreen";
 import { CharacterScreen } from "../ui/menu/CharaterScreen";
 import { ImageSource } from "../sprites/types";
@@ -37,6 +37,10 @@ import { Chest } from "../objects/Chest";
 import { LootTable } from "../loot/LootTable";
 import { DungeonLayout, DungeonRoom } from "../types/DungeonLayout";
 import { Decoration, decorationSize } from "../objects/Decoration";
+import { MobileInput } from "./MobileInput";
+import { useIsMobileDevice } from "../../../hooks";
+import { OverlayHelper } from "../ui/overlay/OverlayHelper";
+import { MobileOverlayHelper } from "../ui/overlay/MobileOverlayHelper";
 
 export abstract class WorldScene extends GameScene implements EntityDelegator {
     protected keys = KeyListener.get();
@@ -106,6 +110,9 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
     protected chestSpots: [number, number][] = [];
 
     protected dungeonLayout: DungeonLayout | null = null;
+
+    protected mobileInput = MobileInput.get();
+    private readonly isMobileDevice = useIsMobileDevice();
 
     init(width: number, height: number): void {
         super.init(width, height);
@@ -298,6 +305,17 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         return Math.hypot(ex - px, ey - py) <= this.activeRadius;
     }
 
+    protected inCameraView(transform: Transform, margin = 150): boolean {
+        const view = this.camera.getViewBounds(this.width, this.height);
+
+        return (
+            transform.x + transform.width > view.x - margin &&
+            transform.x < view.x + view.w + margin &&
+            transform.y + transform.height > view.y - margin &&
+            transform.y < view.y + view.h + margin
+        );
+    }
+
     protected registerEnemy(enemy: Enemy): void {
         if (this.player === null) {
             return;
@@ -321,27 +339,102 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
             return;
         }
 
+        let moveX = 0;
+        let moveY = 0;
+
+        if (
+            this.keys.isKeyDown("KeyA") ||
+            this.keys.isKeyDown("ArrowLeft")
+        ) {
+            moveX -= 1;
+        }
+
+        if (
+            this.keys.isKeyDown("KeyD") ||
+            this.keys.isKeyDown("ArrowRight")
+        ) {
+            moveX += 1;
+        }
+
+        if (
+            this.keys.isKeyDown("KeyW") ||
+            this.keys.isKeyDown("ArrowUp")
+        ) {
+            moveY -= 1;
+        }
+
+        if (
+            this.keys.isKeyDown("KeyS") ||
+            this.keys.isKeyDown("ArrowDown")
+        ) {
+            moveY += 1;
+        }
+
+        const mobileX = this.mobileInput.getMoveX();
+        const mobileY = this.mobileInput.getMoveY();
+
+        if (mobileX !== 0 || mobileY !== 0) {
+            moveX = mobileX;
+            moveY = mobileY;
+        }
+
+        player.setMovementInput(moveX, moveY);
+
+        if (this.isMobileDevice) {
+            if (this.mobileInput.hasAimDirection()) {
+                const centerX = player.transform.x + player.transform.width / 2;
+                const centerY = player.transform.y + player.transform.height / 2;
+
+                player.setAimTarget(
+                    centerX + this.mobileInput.getAimDirX() * 1000,
+                    centerY + this.mobileInput.getAimDirY() * 1000
+                );
+            }
+        } else {
+            const worldAim = this.camera.screenToWorld(
+                this.mouse.getX(),
+                this.mouse.getY()
+            );
+
+            player.setAimTarget(
+                worldAim.x,
+                worldAim.y
+            );
+        }
+
         player.update(deltaTime);
-
-        const worldMouse = this.camera.screenToWorld(this.mouse.getX(), this.mouse.getY());
-
-        player.setAimTarget(worldMouse.x, worldMouse.y);
 
         const transform = player.transform;
 
         transform.x += player.vx * deltaTime;
 
-        if (this.hitsSolid(new AABBCollider(player.getCollisionBox()))) {
+        if (
+            this.hitsSolid(
+                new AABBCollider(
+                    player.getCollisionBox()
+                )
+            )
+        ) {
             transform.x -= player.vx * deltaTime;
         }
 
         transform.y += player.vy * deltaTime;
 
-        if (this.hitsSolid(new AABBCollider(player.getCollisionBox()))) {
+        if (
+            this.hitsSolid(
+                new AABBCollider(
+                    player.getCollisionBox()
+                )
+            )
+        ) {
             transform.y -= player.vy * deltaTime;
         }
 
-        if (this.mouse.isDown()) {
+        const firing = this.isMobileDevice
+            ? this.mobileInput.isAttacking()
+            : this.mouse.isDown();
+
+        if (firing) {
             this.spawnAll(player.fire());
         }
     }
@@ -409,7 +502,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
             return false;
         }
 
-        if (this.keys.isKeyJustPressed("Escape")) {
+        if (this.keys.isKeyJustPressed("Escape") || this.mobileInput.consumePause()) {
             this.paused = false;
         }
 
@@ -465,16 +558,69 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         }
 
         for (const projectile of this.projectiles) {
-            projectile.render(ctx, this.camera);
+            if (this.inCameraView(projectile.transform)) {
+                projectile.render(ctx, this.camera);
+            }
         }
 
         this.player?.render(ctx, this.camera);
 
         for (const enemy of this.enemies) {
-            enemy.render(ctx, this.camera);
+            if (this.inCameraView(enemy.transform)) {
+                enemy.render(ctx, this.camera);
+            }
         }
 
         this.renderHitboxes(ctx);
+
+        this.renderMobileControls(ctx);
+    }
+
+    protected renderMobileControls(ctx: CanvasRenderingContext2D): void {
+        if (this.characterOpen || this.dead) {
+            return;
+        }
+
+        const moveBase = this.mobileInput.getMoveJoystickBase();
+        const moveKnob = this.mobileInput.getMoveJoystickKnob();
+
+        if (moveBase !== null && moveKnob !== null) {
+            this.drawJoystick(ctx, moveBase, moveKnob);
+        }
+
+        const aimBase = this.mobileInput.getAimJoystickBase();
+        const aimKnob = this.mobileInput.getAimJoystickKnob();
+
+        if (aimBase !== null && aimKnob !== null) {
+            this.drawJoystick(
+                ctx,
+                aimBase,
+                aimKnob,
+                "rgba(255,110,110,0.16)",
+                "rgba(255,110,110,0.55)"
+            );
+        }
+    }
+
+    private drawJoystick(
+        ctx: CanvasRenderingContext2D,
+        base: { x: number; y: number },
+        knob: { x: number; y: number },
+        baseColor = "rgba(255,255,255,0.14)",
+        knobColor = "rgba(255,255,255,0.5)"
+    ): void {
+        ctx.beginPath();
+        ctx.arc(base.x, base.y, 58, 0, Math.PI * 2);
+        ctx.fillStyle = baseColor;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(255,255,255,0.25)";
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(knob.x, knob.y, 28, 0, Math.PI * 2);
+        ctx.fillStyle = knobColor;
+        ctx.fill();
     }
 
     private renderFloor(ctx: CanvasRenderingContext2D): void {
@@ -762,12 +908,16 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
             this.camera.toggleMode();
         }
 
-        if (this.keys.isKeyJustPressed("Escape")) {
+        if (this.keys.isKeyJustPressed("Escape") || this.mobileInput.consumePause()) {
             this.paused = true;
         }
 
-        if (this.keys.isKeyJustPressed("KeyI")) {
+        if (this.keys.isKeyJustPressed("KeyI") || this.mobileInput.consumeCharacterScreen()) {
             this.characterOpen = !this.characterOpen;
+        }
+
+        if (this.keys.isKeyJustPressed("KeyQ") || this.mobileInput.consumeSwitchWeapon()) {
+            this.player?.switchWeapon();
         }
 
         if (this.keys.isKeyJustPressed("KeyK")) {
@@ -776,6 +926,9 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
     }
 
     protected updateWorld(deltaTime: number): void {
+        // Read this frame's touches before anything consumes them, so movement/aim aren't a frame stale.
+        this.mobileInput.update(this.width, this.height);
+
         this.enemySpawner.tick(deltaTime, this.enemies.length, (count) => this.spawnBatch(count));
 
         this.updatePlayerMovement(deltaTime);
@@ -821,6 +974,18 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
     protected renderExit(ctx: CanvasRenderingContext2D): void {
         this.exit?.render(ctx, this.camera);
+    }
+
+    protected renderPlayerOverlay(ctx: CanvasRenderingContext2D): void {
+        if (this.player === null) {
+            return;
+        }
+
+        if (this.isMobileDevice) {
+            MobileOverlayHelper.renderPlayerOverlay(ctx, this.player);
+        } else {
+            OverlayHelper.renderPlayerOverlay(ctx, this.player, this.width, this.height);
+        }
     }
 
     private async spawnBatch(count: number): Promise<number> {
