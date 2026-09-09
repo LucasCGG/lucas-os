@@ -1,9 +1,4 @@
-/**
- * One-shot device-type check, shared by useIsMobile() and by code outside
- * React (e.g. the dungeon game's engine) that needs the same answer without
- * a hook.
- */
-export const isMobileDevice = (): boolean => {
+export const useIsMobileDevice = (): boolean => {
   if (typeof navigator === "undefined") {
     return false;
   }
