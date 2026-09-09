@@ -1,6 +1,6 @@
 import { SwitcheruGameBecauseNamingConventions } from "./apps/2048Replica";
 import { AboutApp } from "./apps/AboutApp";
-import { Browser } from "./apps/Browser";
+// import { Browser } from "./apps/Browser";
 import { Console } from "./apps/Console";
 import { DungeonGame } from "./apps/DungeonGame";
 import { MailApp } from "./apps/MailApp";
@@ -32,14 +32,14 @@ export const appsRegistry = {
         defaultSize: { width: 700, height: 500 },
         pinned: true,
     },
-    browser: {
-        id: "browser",
-        title: "Browser",
-        component: Browser,
-        icon: "icn-browser",
-        defaultSize: { width: 700, height: 500 },
-        pinned: true,
-    },
+    // browser: {
+    //     id: "browser",
+    //     title: "Browser",
+    //     component: Browser,
+    //     icon: "icn-browser",
+    //     defaultSize: { width: 700, height: 500 },
+    //     pinned: true,
+    // },
     pdfviewer: {
         id: "pdfviewer",
         title: "Pdf Viewer",
