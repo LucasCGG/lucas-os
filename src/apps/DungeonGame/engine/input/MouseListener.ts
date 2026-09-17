@@ -6,6 +6,7 @@ export class MouseListener {
   private down = false;
   private pressedThisFrame = false;
   private releasedThisFrame = false;
+  private wheelDelta = 0;
 
   static get(): MouseListener {
     if (MouseListener.instance === null) MouseListener.instance = new MouseListener();
@@ -29,14 +30,20 @@ export class MouseListener {
       if (this.down) this.releasedThisFrame = true;
       this.down = false;
     };
+    const onWheel = (e: WheelEvent): void => {
+      this.wheelDelta += e.deltaY;
+      e.preventDefault();
+    };
 
     target.addEventListener("mousemove", onMove);
     target.addEventListener("mousedown", onDown);
+    target.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("mouseup", onUp);
 
     return () => {
       target.removeEventListener("mousemove", onMove);
       target.removeEventListener("mousedown", onDown);
+      target.removeEventListener("wheel", onWheel);
       window.removeEventListener("mouseup", onUp);
     };
   }
@@ -120,5 +127,11 @@ export class MouseListener {
 
   getY(): number {
     return this.y;
+  }
+
+  consumeWheelDelta(): number {
+    const delta = this.wheelDelta;
+    this.wheelDelta = 0;
+    return delta;
   }
 }

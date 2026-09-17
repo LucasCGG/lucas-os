@@ -4,6 +4,7 @@ import { Wall } from "../objects/Wall";
 import { ExitPad } from "../objects/ExitPad";
 import { Spawner } from "../utils/spawner";
 import { DEFAULT_LOOT } from "../loot/LootTable";
+import { FlyingDemonBoss } from "../entities/FlyingDemonBoss";
 
 import wallSheetUrl from "../assets/environment/Dungeon_1/Dungeon_1.png";
 import pillarSheetUrl from "../assets/environment/Dungeon_1/Dungeon_1_Pillars.png";
@@ -13,7 +14,6 @@ import { DungeonGenerator } from "./rooms/DungeonGenerator";
 import { ROOM_TEMPLATES } from "./rooms/RoomCollection";
 import { Decoration } from "../objects/Decoration";
 import { AssetPool } from "../sprites/AssetPool";
-import { MeleeEnemy } from "../entities/MeleeEnemy";
 import { EntityAttributes } from "../attributes/EntityAttributes";
 import { Transform } from "../engine";
 
@@ -45,22 +45,22 @@ export class Level1 extends WorldScene {
     protected meleeScaling = {
         health: {
             base: 250,
-            perLevel: 30,
+            perLevel: 18,
         },
 
         speed: {
             base: 105,
-            perLevel: 4,
+            perLevel: 2,
         },
 
         damage: {
             base: 25,
-            perLevel: 4,
+            perLevel: 2,
         },
 
         defense: {
             base: 3,
-            perLevel: 1,
+            perLevel: 0.5,
             step: 2,
         },
 
@@ -73,17 +73,17 @@ export class Level1 extends WorldScene {
     protected archerScaling = {
         health: {
             base: 150,
-            perLevel: 22,
+            perLevel: 14,
         },
 
         speed: {
             base: 95,
-            perLevel: 3,
+            perLevel: 2,
         },
 
         damage: {
             base: 18,
-            perLevel: 3,
+            perLevel: 1.5,
         },
 
         defense: {
@@ -197,20 +197,17 @@ export class Level1 extends WorldScene {
                 const origin = this.getRoomOrigin(bossRoom, this.dungeonLayout);
                 const stats = new EntityAttributes(1800, 115, 52, 12);
                 stats.setXpReward(1000);
-                const boss = await MeleeEnemy.create({
-                    name: "The Dungeon Warden",
-                    transform: new Transform(
+                const boss = await FlyingDemonBoss.create(
+                    new Transform(
                         origin.x + this.roomWidth(bossRoom) / 2 - 42,
                         origin.y + this.roomHeight(bossRoom) / 2 - 42,
                         84,
                         84,
                         0
                     ),
-                    team: this.enemyTeam,
-                    enemyStats: stats,
-                    xpReward: 1000,
-                    characterId: "Werebear",
-                });
+                    this.enemyTeam,
+                    stats
+                );
                 this.registerEnemy(boss);
             }
         }
@@ -257,6 +254,7 @@ export class Level1 extends WorldScene {
 
         this.renderExit(ctx);
         this.renderDungeonStatus(ctx);
+        this.renderBossBar(ctx);
 
         this.renderPlayerOverlay(ctx);
 

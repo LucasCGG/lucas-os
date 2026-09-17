@@ -177,6 +177,8 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
                 new Transform(x, y, 48, 48, 0),
                 rolled.weaponFactories,
                 rolled.xp,
+                rolled.armorFactories,
+                rolled.rarity,
                 this.player
             );
 
@@ -547,6 +549,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         if (this.mouse.isClicked()) {
             this.characterScreen.handleClick(this.mouse.getX(), this.mouse.getY(), this.player!);
         }
+        this.characterScreen.handleScroll(this.mouse.consumeWheelDelta());
 
         this.keys.endFrame();
         this.mouse.endFrame();
@@ -1107,6 +1110,113 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
             this.width - 16,
             barY + 104
         );
+        ctx.textAlign = "left";
+    }
+
+    protected renderBossBar(ctx: CanvasRenderingContext2D): void {
+        const boss = this.enemies.find(
+            (enemy) => enemy.name === "The Flying Demon" && !enemy.getStats().isDestroyed()
+        );
+        if (boss === undefined) return;
+
+        const barW = Math.min(520, this.width - 48);
+        const barX = (this.width - barW) / 2;
+        const barY = 12;
+        const barH = 18;
+        const ratio = Math.max(
+            0,
+            Math.min(1, boss.getStats().getCurrentHealth() / boss.getStats().getMaxHealth())
+        );
+
+        ctx.save();
+        ctx.fillStyle = "rgba(8, 10, 16, 0.92)";
+        ctx.fillRect(barX - 8, barY - 5, barW + 16, 48);
+        ctx.strokeStyle = "rgba(255,255,255,0.2)";
+        ctx.strokeRect(barX - 8.5, barY - 5.5, barW + 17, 48);
+
+        ctx.fillStyle = "#f2f4f8";
+        ctx.font = "bold 11px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText(boss.name.toUpperCase(), this.width / 2, barY + 1);
+
+        ctx.fillStyle = "#32151d";
+        ctx.fillRect(barX, barY + 9, barW, barH);
+        ctx.fillStyle = "#d6485a";
+        ctx.fillRect(barX, barY + 9, barW * ratio, barH);
+        ctx.strokeStyle = "rgba(255,255,255,0.65)";
+        ctx.strokeRect(barX + 0.5, barY + 9.5, barW - 1, barH - 1);
+
+        ctx.fillStyle = "#f2f4f8";
+        ctx.font = "10px monospace";
+        ctx.fillText(
+            `${Math.ceil(boss.getStats().getCurrentHealth())} / ${Math.ceil(boss.getStats().getMaxHealth())}`,
+            this.width / 2,
+            barY + 22
+        );
+        ctx.restore();
+    }
+
+    protected renderTutorialStatus(ctx: CanvasRenderingContext2D): void {
+        if (this.player === null) return;
+
+        const barY = 45;
+        const barH = 112;
+        const mapRadius = 48;
+        const mapX = this.width - mapRadius - 18;
+        const mapY = barY + mapRadius + 8;
+        const scale = Math.min(
+            (mapRadius * 2 - 12) / this.worldWidth,
+            (mapRadius * 2 - 12) / this.worldHeight
+        );
+        const mapPoint = (x: number, y: number) => ({
+            x: mapX - (this.worldWidth * scale) / 2 + x * scale,
+            y: mapY - (this.worldHeight * scale) / 2 + y * scale,
+        });
+
+        ctx.fillStyle = "rgba(8, 10, 16, 0.9)";
+        ctx.fillRect(0, barY, this.width, barH);
+        ctx.strokeStyle = "rgba(255,255,255,0.14)";
+        ctx.strokeRect(0.5, barY + 0.5, this.width - 1, barH - 1);
+        ctx.font = "bold 12px monospace";
+        ctx.fillStyle = "#f2f4f8";
+        ctx.textAlign = "left";
+        ctx.fillText(this.getStageLabel(), 16, barY + 17);
+        ctx.font = "11px monospace";
+        ctx.fillStyle = "#9da5b4";
+        ctx.fillText("TUTORIAL", 16, barY + 38);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(mapX, mapY, mapRadius, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.fillStyle = "rgba(3, 5, 10, 0.96)";
+        ctx.fillRect(mapX - mapRadius, mapY - mapRadius, mapRadius * 2, mapRadius * 2);
+        ctx.strokeStyle = "rgba(135,144,159,0.8)";
+        ctx.strokeRect(
+            mapX - (this.worldWidth * scale) / 2,
+            mapY - (this.worldHeight * scale) / 2,
+            this.worldWidth * scale,
+            this.worldHeight * scale
+        );
+        const playerPoint = mapPoint(
+            this.player.transform.x + this.player.transform.width / 2,
+            this.player.transform.y + this.player.transform.height / 2
+        );
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(playerPoint.x, playerPoint.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(mapX, mapY, mapRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255,255,255,0.65)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = "#9da5b4";
+        ctx.font = "10px monospace";
+        ctx.textAlign = "right";
+        ctx.fillText("TUTORIAL", this.width - 16, barY + 104);
         ctx.textAlign = "left";
     }
 

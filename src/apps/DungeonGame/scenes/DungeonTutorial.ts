@@ -270,6 +270,7 @@ export class DungeonTutorial extends WorldScene {
     this.renderWorld(ctx);
 
     this.renderExit(ctx);
+    this.renderTutorialStatus(ctx);
 
     this.renderPlayerOverlay(ctx);
 

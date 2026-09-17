@@ -10,6 +10,9 @@ import { Player } from "../entities/Player";
 import { AudioManager } from "../audio/AudioManager";
 import { InspectorRegistry } from "../sprites/InspectorRegistry";
 import { WeaponFactory } from "../types/WeaponFactory";
+import { Armor } from "../items/Armor";
+import { ArmorFactory } from "../items/Armor";
+import { ItemRarity } from "../types/ItemRarity";
 
 export interface ChestSheets {
     idle: SpriteSheet;
@@ -18,6 +21,7 @@ export interface ChestSheets {
 
 export interface ChestReward {
     guns: Weapon[];
+    armor: Armor[];
     xp: number;
 }
 
@@ -33,6 +37,7 @@ export class Chest extends GameObject {
     private opened = false;
     private rewardClaimed = false;
     private readonly rewardGuns: Weapon[];
+    private readonly rewardArmor: Armor[];
     private readonly rewardXp: number;
 
     private popups: RewardPopup[] = [];
@@ -42,18 +47,22 @@ export class Chest extends GameObject {
         transform: Transform,
         sheets: ChestSheets,
         rewardGuns: Weapon[] = [],
-        rewardXp = 0
+        rewardXp = 0,
+        rewardArmor: Armor[] = [],
+        rarity: ItemRarity = "common"
     ) {
         super(name, transform);
         this.animator = new Animator();
-        this.animator.addAnimation(new Animation("idle", sheets.idle, [0], 0.1, true));
+        const spriteIndex = Chest.getRaritySpriteIndex(rarity);
+        this.animator.addAnimation(new Animation("idle", sheets.idle, [spriteIndex], 0.1, true));
         this.animator.addAnimation(
-            new Animation("opening", sheets.opening, [0, 9, 18, 27], 0.12, false)
+            new Animation("opening", sheets.opening, [spriteIndex, spriteIndex + 9, spriteIndex + 18, spriteIndex + 27], 0.12, false)
         );
         this.animator.play("idle");
         this.sprite = new Sprite("chestSprite", this.animator, transform, false);
         InspectorRegistry.register(`chest ${this.id} - idle`, sheets.idle);
         this.rewardGuns = rewardGuns;
+        this.rewardArmor = rewardArmor;
         this.rewardXp = rewardXp;
     }
 
@@ -62,6 +71,8 @@ export class Chest extends GameObject {
         transform: Transform,
         weaponFactories: WeaponFactory[] = [],
         rewardXp = 0,
+        armorFactories: ArmorFactory[] = [],
+        rarity: ItemRarity = "common",
         opener?: Player
     ): Promise<Chest> {
         await AssetPool.loadAll([{ path: "objects/chest", url: chestUrl }]);
@@ -75,7 +86,18 @@ export class Chest extends GameObject {
             guns = await Promise.all(weaponFactories.map((make) => make(provider, team)));
         }
 
-        return new Chest(name, transform, sheets, guns, rewardXp);
+        const armor = armorFactories.map((make) => make());
+        return new Chest(name, transform, sheets, guns, rewardXp, armor, rarity);
+    }
+
+    private static getRaritySpriteIndex(rarity: ItemRarity): number {
+        return {
+            common: 0,
+            uncommon: 1,
+            rare: 2,
+            epic: 3,
+            legendary: 4,
+        }[rarity];
     }
 
     tick(deltaTime: number, opener: Player): void {
@@ -114,12 +136,13 @@ export class Chest extends GameObject {
             return null;
         }
         this.rewardClaimed = true;
-        return { guns: this.rewardGuns, xp: this.rewardXp };
+        return { guns: this.rewardGuns, armor: this.rewardArmor, xp: this.rewardXp };
     }
 
     private grantReward(player: Player, reward: ChestReward): void {
         if (reward.xp) player.getStats().gainExperience(reward.xp);
         for (const gun of reward.guns) player.addWeapon(gun);
+        for (const item of reward.armor) player.addArmor(item);
         AudioManager.get().playSound("ding");
     }
 
@@ -131,6 +154,7 @@ export class Chest extends GameObject {
         for (const gun of reward.guns) {
             labels.push(gun.getDisplayName());
         }
+        for (const item of this.rewardArmor) labels.push(item.getDisplayName());
         labels.forEach((text, i) => {
             this.popups.push({ text, age: -i * 0.45, duration: 1.4 });
         });
@@ -143,7 +167,7 @@ export class Chest extends GameObject {
         this.popups = this.popups.filter((p) => p.age < p.duration);
     }
 
-    update(_deltaTime: number): void {}
+    update(deltaTime: number): void { void deltaTime; }
 
     protected draw(ctx: CanvasRenderingContext2D): void {
         this.sprite.paint(ctx);

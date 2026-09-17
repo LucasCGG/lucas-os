@@ -12,10 +12,11 @@ import { Pistol } from "../weapons/projectiles/Pistol";
 import { Sword } from "../weapons";
 import { MeleeTargetProvider, MeleeWeapon } from "./MeleeWeapon";
 import { Footsteps } from "../audio/Footsteps";
+import { Armor } from "../items/Armor";
 
 const PLAYER_ANIMATION_SPEED = 0.1;
-const REGEN_INTERVAL = 8;
-const REGEN_PER_INTERVAL = 0.5;
+const REGEN_INTERVAL = 30;
+const REGEN_PER_INTERVAL = 1;
 const PLAYER_BASE_DAMAGE = 40;
 const PLAYER_MELEE_ATTACK_SOUNDS = ["ninja_attack_1", "ninja_attack_2"];
 
@@ -43,6 +44,8 @@ export class Player extends Entity {
      * The player's weapons persist with the player between scenes.
      */
     private weapons: Weapon[] = [];
+    private armor: (Armor | null)[] = [null, null, null];
+    private armorInventory: Armor[] = [];
     private weaponIndex = 0;
 
     private meleeTargetProvider: MeleeTargetProvider = {
@@ -307,5 +310,40 @@ export class Player extends Entity {
         }
 
         this.weapons.push(weapon);
+    }
+
+    getArmor(): (Armor | null)[] { return [...this.armor]; }
+
+    getArmorInventory(): Armor[] { return [...this.armorInventory]; }
+
+    addArmor(item: Armor): void {
+        this.armorInventory.push(item);
+    }
+
+    equipArmor(index: number): boolean {
+        if (index < 0 || index >= this.armorInventory.length) return false;
+        const item = this.armorInventory[index];
+        const slot = item.slot === "head" ? 0 : item.slot === "chest" ? 1 : 2;
+        const previous = this.armor[slot];
+        this.armor[slot] = item;
+        this.armorInventory.splice(index, 1);
+        if (previous !== null) this.armorInventory.push(previous);
+        this.refreshArmorBonuses();
+        return true;
+    }
+
+    discardArmor(index: number): boolean {
+        if (index < 0 || index >= this.armorInventory.length) return false;
+        this.armorInventory.splice(index, 1);
+        return true;
+    }
+
+    private refreshArmorBonuses(): void {
+        const equipped = this.armor.filter((item): item is Armor => item !== null);
+        this.stats.setEquipmentBonuses(
+            equipped.reduce((sum, item) => sum + item.defense, 0),
+            equipped.reduce((sum, item) => sum + item.maxHealth, 0),
+            equipped.reduce((sum, item) => sum + item.speed, 0),
+        );
     }
 }

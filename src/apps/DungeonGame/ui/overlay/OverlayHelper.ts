@@ -83,6 +83,16 @@ export class OverlayHelper {
     const weaponList = player.getWeapons() ?? [];
     const weaponName = getWeaponName(gun);
     const weaponDamage = getWeaponDamage(gun);
+    const armorBonuses = player.getArmor().reduce(
+      (totals, armor) => {
+        if (armor === null) return totals;
+        totals.defense += armor.defense;
+        totals.health += armor.maxHealth;
+        totals.speed += armor.speed;
+        return totals;
+      },
+      { defense: 0, health: 0, speed: 0 }
+    );
 
     // Layout
 
@@ -162,6 +172,17 @@ export class OverlayHelper {
       contentX,
       y
     );
+    ctx.textAlign = "right";
+    ctx.font = "10px monospace";
+    ctx.fillStyle = armorBonuses.defense || armorBonuses.health || armorBonuses.speed
+      ? "#8fc7ff"
+      : TEXT_SECONDARY;
+    ctx.fillText(
+      `ARMOR  DEF +${armorBonuses.defense}  HP +${armorBonuses.health}  SPD ${armorBonuses.speed >= 0 ? "+" : ""}${armorBonuses.speed}`,
+      playerPanelX + OverlayHelper.PANEL_WIDTH - OverlayHelper.PADDING,
+      y + 1
+    );
+    ctx.textAlign = "left";
 
     y += 17;
 

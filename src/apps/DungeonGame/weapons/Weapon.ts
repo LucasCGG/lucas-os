@@ -1,8 +1,10 @@
 import { EntityAttributes } from "../attributes/EntityAttributes";
 import { Entity } from "../entities/Entity";
+import { ItemRarity } from "../types/ItemRarity";
 
 export abstract class Weapon {
     private displayName = "Unknown weapon";
+    private rarity: ItemRarity = "common";
 
     setDisplayName(name: string): void {
         this.displayName = name;
@@ -12,7 +14,15 @@ export abstract class Weapon {
         return this.displayName;
     }
 
-    applyOwnerBonus(_stats: EntityAttributes): void {}
+    setRarity(rarity: ItemRarity): void {
+        this.rarity = rarity;
+    }
+
+    getRarity(): ItemRarity {
+        return this.rarity;
+    }
+
+    applyOwnerBonus(stats: EntityAttributes): void { void stats; }
 
     abstract attack(): Entity[];
 
@@ -21,4 +31,6 @@ export abstract class Weapon {
     getDamageOutput(): number {
         return 0;
     }
+
+    setDamageOutput(damage: number): void { void damage; }
 }

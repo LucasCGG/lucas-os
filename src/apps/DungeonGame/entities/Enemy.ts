@@ -46,16 +46,21 @@ export abstract class Enemy extends Entity {
     sheets: CharacterSheets,
     team: Team,
     stats: EntityAttributes,
+    singleFrame = false,
   ) {
     const animator = new Animator();
-    animator.addAnimation(new Animation("idle_front", sheets.idle, [0, 1, 2, 3], ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("idle_left", sheets.idle, [4, 5, 6, 7], ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("idle_right", sheets.idle, [8, 9, 10, 11], ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("idle_back", sheets.idle, [12, 13, 14, 15], ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("walk_front", sheets.walk, [0, 1, 2, 3], ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("walk_left", sheets.walk, [4, 5, 6, 7], ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("walk_right", sheets.walk, [8, 9, 10, 11], ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("walk_back", sheets.walk, [12, 13, 14, 15], ENEMY_ANIMATION_SPEED, true));
+    const frames = singleFrame ? [0] : [0, 1, 2, 3];
+    const leftFrames = singleFrame ? [0] : [4, 5, 6, 7];
+    const rightFrames = singleFrame ? [0] : [8, 9, 10, 11];
+    const backFrames = singleFrame ? [0] : [12, 13, 14, 15];
+    animator.addAnimation(new Animation("idle_front", sheets.idle, frames, ENEMY_ANIMATION_SPEED, true));
+    animator.addAnimation(new Animation("idle_left", sheets.idle, leftFrames, ENEMY_ANIMATION_SPEED, true));
+    animator.addAnimation(new Animation("idle_right", sheets.idle, rightFrames, ENEMY_ANIMATION_SPEED, true));
+    animator.addAnimation(new Animation("idle_back", sheets.idle, backFrames, ENEMY_ANIMATION_SPEED, true));
+    animator.addAnimation(new Animation("walk_front", sheets.walk, frames, ENEMY_ANIMATION_SPEED, true));
+    animator.addAnimation(new Animation("walk_left", sheets.walk, leftFrames, ENEMY_ANIMATION_SPEED, true));
+    animator.addAnimation(new Animation("walk_right", sheets.walk, rightFrames, ENEMY_ANIMATION_SPEED, true));
+    animator.addAnimation(new Animation("walk_back", sheets.walk, backFrames, ENEMY_ANIMATION_SPEED, true));
     animator.play("idle_front");
 
     let hasHurtAnim = false;
@@ -243,7 +248,10 @@ export abstract class Enemy extends Entity {
     return -1;
   }
 
-  protected behave(_deltaTime: number, _distanceToTarget: number): void {}
+  protected behave(deltaTime: number, distanceToTarget: number): void {
+    void deltaTime;
+    void distanceToTarget;
+  }
 
   protected getAimingTransform(): Transform {
     const t = this.transform;
