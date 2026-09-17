@@ -4,22 +4,22 @@ import { TransformProvider } from "../TransformProvider";
 import { ensureBulletSheet } from "../sprites/bulletSheet";
 import { ensureMuzzleFlashSheet } from "../sprites/muzzleFlashSheet";
 
-
 export class Rifle extends ProjectileWeapon {
-  static async create(provider: TransformProvider, team: Team): Promise<Rifle> {
-    const gun = new Rifle(provider, team, await ensureBulletSheet());
-    gun.setMuzzleFlash(await ensureMuzzleFlashSheet());
-    gun.damage = 12;
-    gun.projectileSpeed = 18;
-    gun.cooldown = 0.12;
-    gun.magazineSize = 30;
-    gun.reloadTime = 2.0;
-    gun.maxRange = 650;
-    gun.falloffStart = 400;
-    gun.falloffEnd = 650;
-    gun.minDamageFactor = 0.75;
-    gun.spreadDegrees = 2;
-    gun.reload();
-    return gun;
-  }
+    static async create(provider: TransformProvider, team: Team): Promise<Rifle> {
+        const gun = new Rifle(provider, team, await ensureBulletSheet());
+        gun.setDisplayName("Longshot Rifle");
+        gun.setMuzzleFlash(await ensureMuzzleFlashSheet());
+        gun.damage = 12;
+        gun.projectileSpeed = 18;
+        gun.cooldown = 0.12;
+        gun.magazineSize = 30;
+        gun.reloadTime = 2.0;
+        gun.maxRange = 650;
+        gun.falloffStart = 400;
+        gun.falloffEnd = 650;
+        gun.minDamageFactor = 0.75;
+        gun.spreadDegrees = 2;
+        gun.reload();
+        return gun;
+    }
 }

@@ -3,20 +3,17 @@ import { Team } from "../../entities/Team";
 import { TransformProvider } from "../TransformProvider";
 
 export class Spear extends MeleeWeapon {
-  static async create(
-    provider: TransformProvider,
-    team: Team,
-    targetProvider: MeleeTargetProvider = { getTargets: () => [] },
-  ): Promise<Spear> {
-    const weapon = new Spear(
-      provider,
-      team,
-      targetProvider
-    )
-    weapon.damage = 15;
-    weapon.cooldown = 0.55;
-    weapon.range = 150;
-    weapon.attackAngle = 45;
-    return weapon;
-  }
+    static async create(
+        provider: TransformProvider,
+        team: Team,
+        targetProvider: MeleeTargetProvider = { getTargets: () => [] }
+    ): Promise<Spear> {
+        const weapon = new Spear(provider, team, targetProvider);
+        weapon.setDisplayName("Storm Spear");
+        weapon.damage = 15;
+        weapon.cooldown = 0.55;
+        weapon.range = 150;
+        weapon.attackAngle = 45;
+        return weapon;
+    }
 }

@@ -38,7 +38,7 @@ import { LootTable } from "../loot/LootTable";
 import { DungeonLayout, DungeonRoom } from "../types/DungeonLayout";
 import { Decoration, decorationSize } from "../objects/Decoration";
 import { MobileInput } from "./MobileInput";
-import { useIsMobileDevice } from "../../../hooks";
+import { isMobileDevice } from "../utils/isMobileDevice";
 import { OverlayHelper } from "../ui/overlay/OverlayHelper";
 import { MobileOverlayHelper } from "../ui/overlay/MobileOverlayHelper";
 
@@ -57,6 +57,8 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
     protected walls: Wall[] = [];
     protected wallColliders: AABBCollider[] = [];
+    private readonly wallGrid = new Map<string, AABBCollider[]>();
+    private readonly wallGridSize = 128;
     protected decorations: Decoration[] = [];
 
     /** Floor rects for the stub corridors that bridge undersized rooms to their cell edge. */
@@ -110,9 +112,11 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
     protected chestSpots: [number, number][] = [];
 
     protected dungeonLayout: DungeonLayout | null = null;
+    private minimapTiles: Array<{ x: number; y: number; room: DungeonRoom | undefined }> = [];
+    private minimapCanvas: HTMLCanvasElement | null = null;
 
     protected mobileInput = MobileInput.get();
-    private readonly isMobileDevice = useIsMobileDevice();
+    private readonly isMobile = isMobileDevice();
 
     init(width: number, height: number): void {
         super.init(width, height);
@@ -121,6 +125,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
         this.walls = [];
         this.wallColliders = [];
+        this.wallGrid.clear();
         this.decorations = [];
         this.marginFloor = [];
         this.waterRegions = [];
@@ -141,6 +146,8 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         this.chestSpots = [];
 
         this.dungeonLayout = null;
+        this.minimapTiles = [];
+        this.minimapCanvas = null;
     }
 
     onExit?: () => void;
@@ -228,7 +235,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
         this.walls.push(new Wall("Wall", transform));
 
-        this.wallColliders.push(new AABBCollider(transform));
+        this.addWallCollider(new AABBCollider(transform));
     }
 
     protected addPillar(x: number, y: number, variant = 0): void {
@@ -247,7 +254,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
         const baseTransform = new Transform(x + 4, y + spriteH - baseH, spriteW - 8, baseH, 0);
 
-        this.wallColliders.push(new AABBCollider(baseTransform));
+        this.addWallCollider(new AABBCollider(baseTransform));
     }
 
     protected addDecoration(
@@ -265,13 +272,48 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
     }
 
     protected hitsSolid(collider: Collider): boolean {
-        for (const wallCollider of this.wallColliders) {
-            if (collider.intersects(wallCollider)) {
-                return true;
+        const transform = collider.getTransform();
+        const minX = Math.floor(transform.x / this.wallGridSize);
+        const maxX = Math.floor((transform.x + transform.width) / this.wallGridSize);
+        const minY = Math.floor(transform.y / this.wallGridSize);
+        const maxY = Math.floor((transform.y + transform.height) / this.wallGridSize);
+        for (let gridY = minY; gridY <= maxY; gridY++) {
+            for (let gridX = minX; gridX <= maxX; gridX++) {
+                for (const wallCollider of this.wallGrid.get(`${gridX},${gridY}`) ?? []) {
+                    if (collider.intersects(wallCollider)) {
+                        return true;
+                    }
+                }
             }
         }
 
         return false;
+    }
+
+    private addWallCollider(collider: AABBCollider): void {
+        this.wallColliders.push(collider);
+
+        const transform = collider.getTransform();
+        const minX = Math.floor(transform.x / this.wallGridSize);
+        const maxX = Math.floor(
+            (transform.x + transform.width) / this.wallGridSize
+        );
+        const minY = Math.floor(transform.y / this.wallGridSize);
+        const maxY = Math.floor(
+            (transform.y + transform.height) / this.wallGridSize
+        );
+
+        for (let gridY = minY; gridY <= maxY; gridY++) {
+            for (let gridX = minX; gridX <= maxX; gridX++) {
+                const key = `${gridX},${gridY}`;
+                const cell = this.wallGrid.get(key);
+                if (cell === undefined) {
+                    this.wallGrid.set(key, [collider]);
+                } else {
+                    cell.push(collider);
+                }
+            }
+        }
     }
 
     protected hitsWall(transform: Transform): boolean {
@@ -342,31 +384,19 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         let moveX = 0;
         let moveY = 0;
 
-        if (
-            this.keys.isKeyDown("KeyA") ||
-            this.keys.isKeyDown("ArrowLeft")
-        ) {
+        if (this.keys.isKeyDown("KeyA") || this.keys.isKeyDown("ArrowLeft")) {
             moveX -= 1;
         }
 
-        if (
-            this.keys.isKeyDown("KeyD") ||
-            this.keys.isKeyDown("ArrowRight")
-        ) {
+        if (this.keys.isKeyDown("KeyD") || this.keys.isKeyDown("ArrowRight")) {
             moveX += 1;
         }
 
-        if (
-            this.keys.isKeyDown("KeyW") ||
-            this.keys.isKeyDown("ArrowUp")
-        ) {
+        if (this.keys.isKeyDown("KeyW") || this.keys.isKeyDown("ArrowUp")) {
             moveY -= 1;
         }
 
-        if (
-            this.keys.isKeyDown("KeyS") ||
-            this.keys.isKeyDown("ArrowDown")
-        ) {
+        if (this.keys.isKeyDown("KeyS") || this.keys.isKeyDown("ArrowDown")) {
             moveY += 1;
         }
 
@@ -380,7 +410,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
         player.setMovementInput(moveX, moveY);
 
-        if (this.isMobileDevice) {
+        if (this.isMobile) {
             if (this.mobileInput.hasAimDirection()) {
                 const centerX = player.transform.x + player.transform.width / 2;
                 const centerY = player.transform.y + player.transform.height / 2;
@@ -391,15 +421,9 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
                 );
             }
         } else {
-            const worldAim = this.camera.screenToWorld(
-                this.mouse.getX(),
-                this.mouse.getY()
-            );
+            const worldAim = this.camera.screenToWorld(this.mouse.getX(), this.mouse.getY());
 
-            player.setAimTarget(
-                worldAim.x,
-                worldAim.y
-            );
+            player.setAimTarget(worldAim.x, worldAim.y);
         }
 
         player.update(deltaTime);
@@ -408,31 +432,17 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
         transform.x += player.vx * deltaTime;
 
-        if (
-            this.hitsSolid(
-                new AABBCollider(
-                    player.getCollisionBox()
-                )
-            )
-        ) {
+        if (this.hitsSolid(new AABBCollider(player.getCollisionBox()))) {
             transform.x -= player.vx * deltaTime;
         }
 
         transform.y += player.vy * deltaTime;
 
-        if (
-            this.hitsSolid(
-                new AABBCollider(
-                    player.getCollisionBox()
-                )
-            )
-        ) {
+        if (this.hitsSolid(new AABBCollider(player.getCollisionBox()))) {
             transform.y -= player.vy * deltaTime;
         }
 
-        const firing = this.isMobileDevice
-            ? this.mobileInput.isAttacking()
-            : this.mouse.isDown();
+        const firing = this.isMobile ? this.mobileInput.isAttacking() : this.mouse.isDown();
 
         if (firing) {
             this.spawnAll(player.fire());
@@ -493,7 +503,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
          * the instant their health hits 0.
          */
         this.enemies = this.enemies.filter(
-            (enemy) => !enemy.getStats().isDestroyed() || !enemy.isReadyForRemoval(),
+            (enemy) => !enemy.getStats().isDestroyed() || !enemy.isReadyForRemoval()
         );
     }
 
@@ -535,7 +545,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         }
 
         if (this.mouse.isClicked()) {
-            this.characterScreen.handleClick(this.mouse.getX(), this.mouse.getY());
+            this.characterScreen.handleClick(this.mouse.getX(), this.mouse.getY(), this.player!);
         }
 
         this.keys.endFrame();
@@ -914,6 +924,9 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
         if (this.keys.isKeyJustPressed("KeyI") || this.mobileInput.consumeCharacterScreen()) {
             this.characterOpen = !this.characterOpen;
+            if (this.characterOpen) {
+                this.characterScreen.setActiveTab("inventory");
+            }
         }
 
         if (this.keys.isKeyJustPressed("KeyQ") || this.mobileInput.consumeSwitchWeapon()) {
@@ -940,7 +953,9 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         this.updateEnemyDeaths();
 
         if (this.exit !== null) {
-            const cleared = this.enemySpawner.isFinished() && this.enemies.length === 0;
+            const cleared =
+                this.enemySpawner.isFinished() &&
+                this.enemies.every((enemy) => enemy.getStats().isDestroyed());
 
             this.exit.setActive(cleared);
 
@@ -950,10 +965,11 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
 
             this.exit.reached =
                 this.exit.isActive() &&
-                hits.some(
+                (hits.some(
                     (result) =>
                         result.isTrigger && (result.a === this.player || result.b === this.player)
-                );
+                ) ||
+                    (this.player !== null && this.player.transform.intersects(this.exit.transform)));
 
             if (this.exit.reached && !this.wasAtExit) {
                 AudioManager.get().playSound("ding");
@@ -981,11 +997,189 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
             return;
         }
 
-        if (this.isMobileDevice) {
+        if (this.isMobile) {
             MobileOverlayHelper.renderPlayerOverlay(ctx, this.player);
         } else {
             OverlayHelper.renderPlayerOverlay(ctx, this.player, this.width, this.height);
         }
+    }
+
+    protected renderDungeonStatus(ctx: CanvasRenderingContext2D): void {
+        const layout = this.dungeonLayout;
+        if (layout === null || this.player === null) return;
+
+        const topPadding = 45;
+        const barH = 112;
+        const barY = topPadding;
+        ctx.fillStyle = "rgba(8, 10, 16, 0.9)";
+        ctx.fillRect(0, barY, this.width, barH);
+        ctx.strokeStyle = "rgba(255,255,255,0.14)";
+        ctx.strokeRect(0.5, barY + 0.5, this.width - 1, barH - 1);
+
+        const currentRoom = layout.rooms.find((room) => {
+            const origin = this.getRoomOrigin(room, layout);
+            return (
+                this.player!.transform.x >= origin.x &&
+                this.player!.transform.x <= origin.x + this.roomWidth(room) &&
+                this.player!.transform.y >= origin.y &&
+                this.player!.transform.y <= origin.y + this.roomHeight(room)
+            );
+        });
+        const currentIndex = currentRoom === undefined ? -1 : layout.rooms.indexOf(currentRoom);
+        const total = this.enemySpawner.getTotalToSpawn();
+        const spawned = Math.min(total, this.enemySpawner.getSpawnedCount());
+        const living = this.enemies.filter((enemy) => !enemy.getStats().isDestroyed()).length;
+
+        ctx.font = "bold 12px monospace";
+        ctx.fillStyle = "#f2f4f8";
+        ctx.textAlign = "left";
+        ctx.fillText(this.getStageLabel(), 16, barY + 17);
+        ctx.font = "11px monospace";
+        ctx.fillStyle = "#9da5b4";
+        ctx.fillText(`WAVE ${spawned}/${total}   LIVING ${living}`, 16, barY + 38);
+
+        const mapRadius = 48;
+        const mapX = this.width - mapRadius - 18;
+        const mapY = barY + mapRadius + 8;
+        const mapDiameter = mapRadius * 2;
+        const scale = Math.min(
+            (mapDiameter - 12) / this.worldWidth,
+            (mapDiameter - 12) / this.worldHeight
+        );
+        const mapPoint = (x: number, y: number) => ({
+            x: mapX - (this.worldWidth * scale) / 2 + x * scale,
+            y: mapY - (this.worldHeight * scale) / 2 + y * scale,
+        });
+
+        if (this.minimapCanvas === null) {
+            this.minimapCanvas = this.buildMinimapCanvas(layout, scale, mapRadius);
+        }
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(mapX, mapY, mapRadius, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.fillStyle = "rgba(3, 5, 10, 0.96)";
+        ctx.fillRect(mapX - mapRadius, mapY - mapRadius, mapDiameter, mapDiameter);
+
+        ctx.drawImage(this.minimapCanvas, mapX - mapRadius, mapY - mapRadius);
+
+        const playerPoint = mapPoint(
+            this.player.transform.x + this.player.transform.width / 2,
+            this.player.transform.y + this.player.transform.height / 2
+        );
+        ctx.save();
+        ctx.translate(playerPoint.x, playerPoint.y);
+        ctx.rotate((this.player.getFacingRotation() * Math.PI) / 180);
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.moveTo(7, 0);
+        ctx.lineTo(-5, -4);
+        ctx.lineTo(-3, 0);
+        ctx.lineTo(-5, 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        if (this.exit !== null) {
+            const exitPoint = mapPoint(
+                this.exit.transform.x + this.exit.transform.width / 2,
+                this.exit.transform.y + this.exit.transform.height / 2
+            );
+            ctx.fillStyle = this.exit.isActive() ? "#5ad46a" : "#9da5b4";
+            ctx.beginPath();
+            ctx.arc(exitPoint.x, exitPoint.y, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(mapX, mapY, mapRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(255,255,255,0.65)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.fillStyle = "#9da5b4";
+        ctx.font = "10px monospace";
+        ctx.textAlign = "right";
+        ctx.fillText(
+            `ROOM ${Math.max(1, currentIndex + 1)}/${layout.rooms.length}`,
+            this.width - 16,
+            barY + 104
+        );
+        ctx.textAlign = "left";
+    }
+
+    private buildMinimapTiles(
+        layout: DungeonLayout
+    ): Array<{ x: number; y: number; room: DungeonRoom | undefined }> {
+        const tiles: Array<{ x: number; y: number; room: DungeonRoom | undefined }> = [];
+
+        for (let worldY = 0; worldY < this.worldHeight; worldY += this.floorTileSize) {
+            for (let worldX = 0; worldX < this.worldWidth; worldX += this.floorTileSize) {
+                if (!this.isFloorTile(worldX, worldY, this.floorTileSize)) {
+                    continue;
+                }
+
+                const room = layout.rooms.find((candidate) => {
+                    const origin = this.getRoomOrigin(candidate, layout);
+                    return (
+                        worldX >= origin.x &&
+                        worldX < origin.x + this.roomWidth(candidate) &&
+                        worldY >= origin.y &&
+                        worldY < origin.y + this.roomHeight(candidate)
+                    );
+                });
+
+                tiles.push({ x: worldX, y: worldY, room });
+            }
+        }
+
+        return tiles;
+    }
+
+    private buildMinimapCanvas(
+        layout: DungeonLayout,
+        scale: number,
+        mapRadius: number
+    ): HTMLCanvasElement {
+        const canvas = document.createElement("canvas");
+        canvas.width = mapRadius * 2;
+        canvas.height = mapRadius * 2;
+
+        const mapTileSize = this.floorTileSize * scale;
+        const offsetX = mapRadius - (this.worldWidth * scale) / 2;
+        const offsetY = mapRadius - (this.worldHeight * scale) / 2;
+
+        if (this.minimapTiles.length === 0) {
+            this.minimapTiles = this.buildMinimapTiles(layout);
+        }
+
+        const minimapContext = canvas.getContext("2d");
+        if (minimapContext === null) {
+            return canvas;
+        }
+
+        for (const tile of this.minimapTiles) {
+            const boss = tile.room?.template.tags?.includes("boss") ?? false;
+            minimapContext.fillStyle = boss ? "#e05261" : "#87909f";
+            minimapContext.fillRect(
+                offsetX + tile.x * scale,
+                offsetY + tile.y * scale,
+                mapTileSize + 0.5,
+                mapTileSize + 0.5
+            );
+        }
+
+        return canvas;
+    }
+
+    protected getStageLabel(): string {
+        return "DUNGEON";
+    }
+
+    protected getEnemyLevel(): number {
+        return this.player?.getStats().getLevel() ?? 1;
     }
 
     private async spawnBatch(count: number): Promise<number> {
@@ -1001,7 +1195,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
     private async spawnEnemies(count: number): Promise<Enemy[]> {
         const spawned: Enemy[] = [];
 
-        const level = this.player?.getStats().getLevel() ?? 1;
+        const level = this.getEnemyLevel();
 
         for (let i = 0; i < count; i++) {
             const transform = this.findSpawnPoint(52, 52);
@@ -1305,7 +1499,14 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         const marginE = cellX + cellWidth - (originX + W);
 
         if (marginN > 0 && this.roomHasDoor(room, "N")) {
-            this.buildStub(originX + W / 2 - doorWidth / 2, cellY, doorWidth, marginN, T, "vertical");
+            this.buildStub(
+                originX + W / 2 - doorWidth / 2,
+                cellY,
+                doorWidth,
+                marginN,
+                T,
+                "vertical"
+            );
         }
 
         if (marginS > 0 && this.roomHasDoor(room, "S")) {
@@ -1320,7 +1521,14 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         }
 
         if (marginW > 0 && this.roomHasDoor(room, "W")) {
-            this.buildStub(cellX, originY + H / 2 - doorWidth / 2, marginW, doorWidth, T, "horizontal");
+            this.buildStub(
+                cellX,
+                originY + H / 2 - doorWidth / 2,
+                marginW,
+                doorWidth,
+                T,
+                "horizontal"
+            );
         }
 
         if (marginE > 0 && this.roomHasDoor(room, "E")) {

@@ -13,12 +13,17 @@ import { DungeonGenerator } from "./rooms/DungeonGenerator";
 import { ROOM_TEMPLATES } from "./rooms/RoomCollection";
 import { Decoration } from "../objects/Decoration";
 import { AssetPool } from "../sprites/AssetPool";
+import { MeleeEnemy } from "../entities/MeleeEnemy";
+import { EntityAttributes } from "../attributes/EntityAttributes";
+import { Transform } from "../engine";
 
 export class Level1 extends WorldScene {
     private readonly scenePlayer: Player;
 
     private generatedWidth = 1600;
     private generatedHeight = 1200;
+    protected readonly difficulty: number;
+    protected readonly hasBoss: boolean;
 
     protected get worldWidth(): number {
         return this.generatedWidth;
@@ -95,10 +100,20 @@ export class Level1 extends WorldScene {
 
     protected archerChance = 0.45;
 
-    constructor(player: Player) {
+    constructor(player: Player, options: { difficulty?: number; boss?: boolean } = {}) {
         super();
 
         this.scenePlayer = player;
+        this.difficulty = options.difficulty ?? 0;
+        this.hasBoss = options.boss ?? false;
+    }
+
+    protected override getEnemyLevel(): number {
+        return (this.player?.getStats().getLevel() ?? 1) + this.difficulty;
+    }
+
+    protected override getStageLabel(): string {
+        return this.hasBoss ? "LEVEL 2 • WARDEN'S KEEP" : "LEVEL 1 • THE SUNKEN HALLS";
     }
 
     override init(width: number, height: number): void {
@@ -160,7 +175,7 @@ export class Level1 extends WorldScene {
     }
 
     async load(): Promise<void> {
-        this.musicKey = "dungeon";
+        this.musicKey = this.hasBoss ? "boss" : "dungeon";
 
         this.startMusic();
 
@@ -173,6 +188,32 @@ export class Level1 extends WorldScene {
         await AssetPool.loadAll([{ path: "dungeon/water", url: waterSheetUrl }]);
 
         await this.spawnRoomChests(DEFAULT_LOOT);
+
+        if (this.hasBoss && this.dungeonLayout !== null) {
+            const bossRoom = this.dungeonLayout.rooms.find((room) =>
+                room.template.tags?.includes("boss")
+            );
+            if (bossRoom !== undefined) {
+                const origin = this.getRoomOrigin(bossRoom, this.dungeonLayout);
+                const stats = new EntityAttributes(1800, 115, 52, 12);
+                stats.setXpReward(1000);
+                const boss = await MeleeEnemy.create({
+                    name: "The Dungeon Warden",
+                    transform: new Transform(
+                        origin.x + this.roomWidth(bossRoom) / 2 - 42,
+                        origin.y + this.roomHeight(bossRoom) / 2 - 42,
+                        84,
+                        84,
+                        0
+                    ),
+                    team: this.enemyTeam,
+                    enemyStats: stats,
+                    xpReward: 1000,
+                    characterId: "Werebear",
+                });
+                this.registerEnemy(boss);
+            }
+        }
     }
 
     override update(deltaTime: number): void {
@@ -199,6 +240,10 @@ export class Level1 extends WorldScene {
         this.updateWorld(deltaTime);
     }
 
+    protected override onExitReached(): void {
+        this.onExit?.();
+    }
+
     override render(ctx: CanvasRenderingContext2D): void {
         if (this.paused) {
             this.pause.draw(ctx, this.width, this.height);
@@ -211,6 +256,7 @@ export class Level1 extends WorldScene {
         this.renderChests(ctx);
 
         this.renderExit(ctx);
+        this.renderDungeonStatus(ctx);
 
         this.renderPlayerOverlay(ctx);
 

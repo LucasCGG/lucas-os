@@ -5,19 +5,20 @@ import { ensureBulletSheet } from "../sprites/bulletSheet";
 import { ensureMuzzleFlashSheet } from "../sprites/muzzleFlashSheet";
 
 export class Pistol extends ProjectileWeapon {
-  static async create(provider: TransformProvider, team: Team): Promise<Pistol> {
-    const gun = new Pistol(provider, team, await ensureBulletSheet());
-    gun.setMuzzleFlash(await ensureMuzzleFlashSheet());
-    gun.damage = 10;
-    gun.projectileSpeed = 13;
-    gun.cooldown = 0.35;
-    gun.magazineSize = 12;
-    gun.reloadTime = 1.0;
-    gun.maxRange = 500;
-    gun.falloffStart = 300;
-    gun.falloffEnd = 500;
-    gun.minDamageFactor = 0.7;
-    gun.reload();
-    return gun;
-  }
+    static async create(provider: TransformProvider, team: Team): Promise<Pistol> {
+        const gun = new Pistol(provider, team, await ensureBulletSheet());
+        gun.setDisplayName("Sidearm");
+        gun.setMuzzleFlash(await ensureMuzzleFlashSheet());
+        gun.damage = 10;
+        gun.projectileSpeed = 13;
+        gun.cooldown = 0.35;
+        gun.magazineSize = 12;
+        gun.reloadTime = 1.0;
+        gun.maxRange = 500;
+        gun.falloffStart = 300;
+        gun.falloffEnd = 500;
+        gun.minDamageFactor = 0.7;
+        gun.reload();
+        return gun;
+    }
 }

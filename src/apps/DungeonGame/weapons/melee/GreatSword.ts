@@ -3,20 +3,17 @@ import { Team } from "../../entities/Team";
 import { TransformProvider } from "../TransformProvider";
 
 export class GreatSword extends MeleeWeapon {
-  static async create(
-    provider: TransformProvider,
-    team: Team,
-    targetProvider: MeleeTargetProvider = { getTargets: () => [] },
-  ): Promise<GreatSword> {
-    const weapon = new GreatSword(
-      provider,
-      team,
-      targetProvider
-    )
-    weapon.damage = 28;
-    weapon.cooldown = 1.0;
-    weapon.range = 80;
-    weapon.attackAngle = 160;
-    return weapon;
-  }
+    static async create(
+        provider: TransformProvider,
+        team: Team,
+        targetProvider: MeleeTargetProvider = { getTargets: () => [] }
+    ): Promise<GreatSword> {
+        const weapon = new GreatSword(provider, team, targetProvider);
+        weapon.setDisplayName("Titan Greatsword");
+        weapon.damage = 28;
+        weapon.cooldown = 1.0;
+        weapon.range = 80;
+        weapon.attackAngle = 160;
+        return weapon;
+    }
 }

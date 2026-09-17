@@ -1,84 +1,73 @@
 import { SpawnerConfig } from "../types/SpawnerConfig";
 
 export class Spawner {
-  private timer = 0;
-  private nextDelay: number;
-  private spawnedCount = 0;
-  private isSpawning = false;
+    private timer = 0;
+    private nextDelay: number;
+    private spawnedCount = 0;
+    private isSpawning = false;
 
-  constructor(protected readonly config: SpawnerConfig) {
-    this.nextDelay = this.rollDelay();
-  }
-
-  tick(
-    deltaTime: number,
-    currentCount: number,
-    spawnBatch: (count: number) => Promise<number>,
-  ): void {
-    if (this.isFinished()) return;
-    if (this.isSpawning) return;
-
-    this.timer += deltaTime;
-
-
-    if (
-      this.config.maxActive !== undefined &&
-      currentCount >= this.config.maxActive
-    ) {
-      return;
+    constructor(protected readonly config: SpawnerConfig) {
+        this.nextDelay = this.rollDelay();
     }
-    if (this.timer < this.nextDelay) return;
 
-    this.timer = 0;
-    this.nextDelay = this.rollDelay();
+    tick(
+        deltaTime: number,
+        currentCount: number,
+        spawnBatch: (count: number) => Promise<number>
+    ): void {
+        if (this.isFinished()) return;
+        if (this.isSpawning) return;
 
-    const remaining =
-      this.config.totalToSpawn - this.spawnedCount;
+        this.timer += deltaTime;
 
-    const batch = Math.min(
-      this.rollBatch(),
-      remaining,
-    );
+        if (this.config.maxActive !== undefined && currentCount >= this.config.maxActive) {
+            return;
+        }
+        if (this.timer < this.nextDelay) return;
 
-    this.isSpawning = true;
-    this.spawnedCount += batch;
+        this.timer = 0;
+        this.nextDelay = this.rollDelay();
 
-    void spawnBatch(batch)
-      .then((actualSpawned) => {
-        this.spawnedCount -= batch - actualSpawned;
-      })
-      .catch(() => {
-        // Undo reservation if spawning completely fails.
-        this.spawnedCount -= batch;
-      })
-      .finally(() => {
-        this.isSpawning = false;
-      });
-  }
+        const remaining = this.config.totalToSpawn - this.spawnedCount;
 
-  isFinished(): boolean {
-    return this.spawnedCount >= this.config.totalToSpawn;
-  }
+        const batch = Math.min(this.rollBatch(), remaining);
 
-  getSpawnedCount(): number {
-    return this.spawnedCount;
-  }
+        this.isSpawning = true;
+        this.spawnedCount += batch;
 
-  protected rollDelay(): number {
-    return (
-      this.config.minDelay +
-      Math.random() *
-        (this.config.maxDelay - this.config.minDelay)
-    );
-  }
+        void spawnBatch(batch)
+            .then((actualSpawned) => {
+                this.spawnedCount -= batch - actualSpawned;
+            })
+            .catch(() => {
+                // Undo reservation if spawning completely fails.
+                this.spawnedCount -= batch;
+            })
+            .finally(() => {
+                this.isSpawning = false;
+            });
+    }
 
-  protected rollBatch(): number {
-    return (
-      this.config.minBatch +
-      Math.floor(
-        Math.random() *
-          (this.config.maxBatch - this.config.minBatch + 1),
-      )
-    );
-  }
+    isFinished(): boolean {
+        return this.spawnedCount >= this.config.totalToSpawn;
+    }
+
+    getSpawnedCount(): number {
+        return this.spawnedCount;
+    }
+
+    getTotalToSpawn(): number {
+        return this.config.totalToSpawn;
+    }
+
+    protected rollDelay(): number {
+        return this.config.minDelay + Math.random() * (this.config.maxDelay - this.config.minDelay);
+    }
+
+    protected rollBatch(): number {
+        return (
+            this.config.minBatch +
+            Math.floor(Math.random() * (this.config.maxBatch - this.config.minBatch + 1))
+        );
+    }
 }

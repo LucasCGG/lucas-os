@@ -3,20 +3,17 @@ import { Team } from "../../entities/Team";
 import { TransformProvider } from "../TransformProvider";
 
 export class Rapier extends MeleeWeapon {
-  static async create(
-    provider: TransformProvider,
-    team: Team,
-    targetProvider: MeleeTargetProvider = { getTargets: () => [] },
-  ): Promise<Rapier> {
-    const weapon = new Rapier(
-      provider,
-      team,
-      targetProvider
-    )
-    weapon.damage = 9;
-    weapon.cooldown = 0.25;
-    weapon.range = 110;
-    weapon.attackAngle = 50;
-    return weapon;
-  }
+    static async create(
+        provider: TransformProvider,
+        team: Team,
+        targetProvider: MeleeTargetProvider = { getTargets: () => [] }
+    ): Promise<Rapier> {
+        const weapon = new Rapier(provider, team, targetProvider);
+        weapon.setDisplayName("Silver Rapier");
+        weapon.damage = 9;
+        weapon.cooldown = 0.25;
+        weapon.range = 110;
+        weapon.attackAngle = 50;
+        return weapon;
+    }
 }
