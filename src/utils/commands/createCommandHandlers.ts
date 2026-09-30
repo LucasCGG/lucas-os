@@ -9,6 +9,8 @@ type FileSystemNode = {
     mime?: string;
     children?: Record<string, FileSystemNode>;
     hidden?: boolean;
+    appId?: string;
+    title?: string;
 };
 
 export type CommandOutput =
@@ -324,6 +326,11 @@ Available commands:
             const abs = toAbsolutePath(raw);
             const node = resolvePath(abs);
             if (!node || node.type !== "file") return `xdg-open: "${raw}": No such file`;
+
+            if (node.appId) {
+                useWindowStore.getState().openApp(node.appId);
+                return `Opening "${node.title ?? node.appId}"...`;
+            }
 
             const mime = node.mime || guessMime(raw);
             const isPdf = mime === "application/pdf" || raw.toLowerCase().endsWith(".pdf");

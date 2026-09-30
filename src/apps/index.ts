@@ -5,3 +5,4 @@ export * from "./Browser";
 export * from "./PdfViewer";
 export * from "./2048Replica"
 export * from "./DungeonGame";
+export * from "./ProjectsApp";

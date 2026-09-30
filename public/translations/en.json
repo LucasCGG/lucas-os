@@ -47,7 +47,7 @@
             "intro": {
                 "type": "richtext",
                 "label": "Intro",
-                "value": "I love bringing ideas to life with <hl>code</hl> and <hl>design</hl> — whether it's building smooth frontend interfaces, animating with Rive, or hacking together backend logic. I've touched a bit of <hl>everything</hl>, and I'm always up for a new challenge. Whatever you throw at me, I'll figure it out (and probably already have something in mind for it ;P)"
+                "value": "I'm a software developer who enjoys making tech feel simple — for the <hl>users</hl>, and for the <hl>team behind it</hl>. Today I'm <hl>Software Lead</hl> at expertshare, where I own the frontend and mentor our interns. Alongside that I study <hl>Computer Science</hl> at ZHAW and recently joined the Electronics team at ZUR Formula Student. From <hl>frontend and design</hl> to <hl>APIs and backend logic</hl>, whatever you throw at me, I'll figure it out (and probably already have something in mind for it ;P)"
             },
             "skillsHeading": { "type": "text", "label": "Skills heading", "value": "My Skills" },
             "skills": {
@@ -59,10 +59,14 @@
                     "JS",
                     "React",
                     "C#",
-                    "WordPress",
+                    "Java",
+                    "Python",
+                    "Git",
                     "Figma",
-                    "Rive",
-                    "Webflow"
+                    "WordPress",
+                    "Webflow",
+                    "Framer",
+                    "Rive"
                 ]
             },
             "timeline": {
@@ -71,23 +75,23 @@
                 "value": [
                     {
                         "year": "2021",
-                        "title": "Started WISS School",
-                        "sub": "Began my EFZ program in software development."
+                        "title": "Started at WISS",
+                        "sub": "Began my EFZ as an <hl>Applikationsentwickler</hl> (software developer)."
                     },
                     {
                         "year": "2023",
-                        "title": "Apprenticeship @ Expertshare AG",
-                        "sub": "Worked on <hl>SaaS platforms SD</hl>, UI/UX, and web apps."
+                        "title": "Software Developer @ expertshare ag",
+                        "sub": "Built and maintained <hl>SaaS platforms</hl> and CRM websites, improved <hl>UI/UX</hl>, and ran live streams for hybrid events."
                     },
                     {
                         "year": "2025",
                         "title": "EFZ Graduation & Awards",
-                        "sub": "Graduated with <b>5.6 Grade</b>, <hl>ZLI Award</hl> & <hl>Best in Rank</hl>."
+                        "sub": "Graduated with a <b>5.6</b>, the <hl>ZLI Award</hl> & <hl>Best in Rank</hl>."
                     },
                     {
                         "year": "Present",
-                        "title": "Lead Frontend Dev & CS Student",
-                        "sub": "Leading frontend at <hl>expertshare AG</hl> while studying <hl>Computer Science</hl> at ZHAW."
+                        "title": "Software Lead & CS Student",
+                        "sub": "Leading frontend development and mentoring interns at <hl>expertshare ag</hl>, while studying <hl>Computer Science</hl> at ZHAW and being part of the Electronics team at <hl>ZUR Formula Student</hl>."
                     }
                 ]
             }
@@ -178,6 +182,37 @@
                     }
                 }
             }
+        },
+        "projects": {
+            "title": { "type": "text", "label": "Window title", "value": "Projects" },
+            "home": { "type": "text", "label": "Home folder name", "value": "Home" },
+            "searchPlaceholder": { "type": "text", "label": "Search placeholder", "value": "Search this folder…" },
+            "itemCount": { "type": "text", "label": "Status bar — item count", "value": "{{count}} items" },
+            "lineCount": { "type": "text", "label": "Status bar — line count", "value": "{{count}} lines" },
+            "emptyFolder": { "type": "text", "label": "Empty folder message", "value": "This folder is empty." },
+            "missing": { "type": "text", "label": "Missing folder message", "value": "This folder or file doesn't exist anymore." },
+            "goHome": { "type": "text", "label": "Go home button", "value": "Go to Home" },
+            "loading": { "type": "text", "label": "Loading file message", "value": "Loading…" },
+            "fileUnavailable": { "type": "text", "label": "File can't be loaded message", "value": "This file can't be opened." },
+            "screenshotCount": { "type": "text", "label": "Status bar — screenshot count", "value": "{{count}} screenshots" },
+            "openRepo": { "type": "text", "label": "Repository button", "value": "View on GitHub" },
+            "openLive": { "type": "text", "label": "Live site button", "value": "Open live site" },
+            "openDocs": { "type": "text", "label": "Documentation button", "value": "Read the docs" },
+            "privateRepo": { "type": "text", "label": "Private repository label", "value": "Private repository" },
+            "techStack": { "type": "text", "label": "Tech stack heading", "value": "Tech stack" },
+            "screenshots": { "type": "text", "label": "Screenshots heading", "value": "Screenshots" },
+            "noScreenshots": {
+                "type": "longtext",
+                "label": "No screenshots message",
+                "value": "No screenshots for this one. It's best seen in the code."
+            },
+            "noResults": { "type": "text", "label": "No search results", "value": "No projects match “{{query}}”." },
+            "back": { "type": "text", "label": "Back button", "value": "Back" },
+            "forward": { "type": "text", "label": "Forward button", "value": "Forward" },
+            "up": { "type": "text", "label": "Up button", "value": "Up one level" },
+            "closePreview": { "type": "text", "label": "Close preview button", "value": "Close preview" },
+            "previous": { "type": "text", "label": "Previous screenshot button", "value": "Previous" },
+            "next": { "type": "text", "label": "Next screenshot button", "value": "Next" }
         }
     }
 }

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { projects } from "../apps/ProjectsApp/projects";
 
 export type FileSystemNode = {
     type: "file" | "directory";
@@ -8,7 +9,14 @@ export type FileSystemNode = {
     mime?: string;
     src?: string;
     hidden?: boolean;
+
+    /** App launchers in ~/apps: opening the file opens this app. */
+    appId?: string;
+    title?: string;
+    icon?: string;
 };
+
+export const APP_MIME = "application/x-lucasos-app";
 
 type FileSystemState = {
     tree: Record<string, FileSystemNode>;
@@ -28,20 +36,51 @@ type FileSystemState = {
     ensureDirAbs: (absPath: string[]) => FileSystemNode | null;
 };
 
+/** ~/Projects mirrors the Projects app: one folder per project with a README and its screenshots. */
+function projectsDirectory(): FileSystemNode {
+    const children: Record<string, FileSystemNode> = {};
+
+    for (const project of projects) {
+        const folder: Record<string, FileSystemNode> = {
+            "README.txt": {
+                type: "file",
+                mime: "text/plain",
+                content: [
+                    project.name,
+                    `${project.category} · ${project.year}`,
+                    "",
+                    ...project.description,
+                    "",
+                    `Stack: ${project.stack.join(", ")}`,
+                    `Repo:  ${project.repo ?? "private repository"}`,
+                    ...(project.live ? [`Live:  ${project.live}`] : []),
+                    ...(project.docs ? [`Docs:  ${project.docs}`] : []),
+                ].join("\n"),
+            },
+        };
+
+        for (const screenshot of project.screenshots) {
+            const name = screenshot.src.split("/").pop() ?? screenshot.src;
+            folder[name] = {
+                type: "file",
+                mime: name.endsWith(".png") ? "image/png" : "image/jpeg",
+                src: screenshot.src,
+            };
+        }
+
+        children[project.id] = { type: "directory", children: folder };
+    }
+
+    return { type: "directory", children };
+}
+
 function initialTree(): Record<string, FileSystemNode> {
     return {
         "~": {
             type: "directory",
             children: {
-                apps: {
-                    type: "directory",
-                    children: {
-                        about: { type: "file", content: "About App" },
-                        projects: { type: "file", content: "Projects App" },
-                        terminal: { type: "file", content: "Terminal App" },
-                        PdfViewer: { type: "file", content: "Pdf Viewer App" },
-                    },
-                },
+                // Filled from the app registry by mountApps().
+                apps: { type: "directory", children: {} },
 
                 Desktop: {
                     type: "directory",
@@ -62,30 +101,10 @@ function initialTree(): Record<string, FileSystemNode> {
                             mime: "text/plain",
                             content: "This is a fake terminal.\nFeel free to explore.",
                         },
-                        "about_me.txt": {
-                            type: "file",
-                            mime: "text/plain",
-                            content: `...your same about text...`,
-                        },
-                        "skills.txt": {
-                            type: "file",
-                            mime: "text/plain",
-                            content: `...your same skills text...`,
-                        },
-                        "timeline.txt": {
-                            type: "file",
-                            mime: "text/plain",
-                            content: `...your same timeline text...`,
-                        },
-                        "contacts.txt": {
-                            type: "file",
-                            mime: "text/plain",
-                            content: `...your same contacts text...`,
-                        },
-                        "CV_Lucas_Colaco.pdf": {
+                        "LucasCV.pdf": {
                             type: "file",
                             mime: "application/pdf",
-                            src: "/files/CV_Lucas_Colaco.pdf",
+                            src: "/files/LucasCV.pdf",
                         },
                         "dont_open.pdf": {
                             type: "file",
@@ -114,6 +133,8 @@ function initialTree(): Record<string, FileSystemNode> {
                 },
 
                 Downloads: { type: "directory", children: {} },
+
+                Projects: projectsDirectory(),
 
                 Pictures: {
                     type: "directory",
@@ -419,3 +440,30 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
         return node;
     },
 }));
+
+type AppLauncher = { id: string; title: string; icon: string };
+
+/**
+ * Fills ~/apps with one launcher per app, named by app id so `ls apps` lines up with `open <id>`.
+ * Called from the app registry; importing the registry here would create a circular import.
+ */
+export function mountApps(apps: AppLauncher[]): void {
+    const children: Record<string, FileSystemNode> = {};
+
+    // Apps without an icon (e.g. the PDF viewer) need a file to open, so they aren't launchable on their own.
+    for (const app of apps.filter((a) => a.icon)) {
+        children[app.id] = {
+            type: "file",
+            mime: APP_MIME,
+            appId: app.id,
+            title: app.title,
+            icon: app.icon,
+            content: `${app.title}\nRun "open ${app.id}" or "xdg-open ~/apps/${app.id}" to launch it.`,
+        };
+    }
+
+    const tree = useFileSystemStore.getState().tree;
+    const home = tree["~"];
+    home.children = { ...home.children, apps: { type: "directory", children } };
+    useFileSystemStore.setState({ tree: { ...tree } });
+}

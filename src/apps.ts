@@ -1,10 +1,12 @@
 import { SwitcheruGameBecauseNamingConventions } from "./apps/2048Replica";
 import { AboutApp } from "./apps/AboutApp";
-// import { Browser } from "./apps/Browser";
+import { Browser } from "./apps/Browser";
 import { Console } from "./apps/Console";
 import { DungeonGame } from "./apps/DungeonGame";
 import { MailApp } from "./apps/MailApp";
 import { PdfViewer } from "./apps/PdfViewer";
+import { ProjectsApp } from "./apps/ProjectsApp";
+import { mountApps } from "./atoms/fileSystem";
 
 export const appsRegistry = {
     console: {
@@ -24,6 +26,14 @@ export const appsRegistry = {
         defaultSize: { width: 1000, height: 650 },
         pinned: true,
     },
+    projects: {
+        id: "projects",
+        title: "Projects",
+        component: ProjectsApp,
+        icon: "icn-projects-app",
+        defaultSize: { width: 900, height: 600 },
+        pinned: true,
+    },
     mail: {
         id: "mail",
         title: "Email",
@@ -32,14 +42,14 @@ export const appsRegistry = {
         defaultSize: { width: 700, height: 500 },
         pinned: true,
     },
-    // browser: {
-    //     id: "browser",
-    //     title: "Browser",
-    //     component: Browser,
-    //     icon: "icn-browser",
-    //     defaultSize: { width: 700, height: 500 },
-    //     pinned: true,
-    // },
+    browser: {
+        id: "browser",
+        title: "Browser",
+        component: Browser,
+        icon: "icn-browser",
+        defaultSize: { width: 700, height: 500 },
+        pinned: true,
+    },
     pdfviewer: {
         id: "pdfviewer",
         title: "Pdf Viewer",
@@ -60,9 +70,11 @@ export const appsRegistry = {
         id: "dungeon",
         title: "Dungeon",
         component: DungeonGame,
-        icon: "icn-2048-app",
+        icon: "icn-dungeon-app",
         defaultSize: { width: 820, height: 620 },
         pinned: true,
         mobileImmersive: true,
     },
 };
+
+mountApps(Object.values(appsRegistry));

@@ -14,6 +14,7 @@ const skillIcons: Record<string, string> = {
     Figma: "icn-figma",
     Rive: "icn-rive",
     Webflow: "icn-webflow",
+    Git: "icn-git",
 };
 const iconFor = (name: string) => skillIcons[name] ?? skillIcons[name.trim()] ?? "";
 
@@ -61,7 +62,14 @@ export const AboutApp: FC = () => {
                                             title={title}
                                             className="flex aspect-square items-center justify-center rounded-md bg-background p-2"
                                         >
-                                            <AppIcon icon={iconFor(title)} size="auto" />
+                                            {iconFor(title) ? (
+                                                <AppIcon icon={iconFor(title)} size="auto" />
+                                            ) : (
+                                                // Skills without an icon get their name instead of an empty tile.
+                                                <span className="text-center text-[8px] font-bold leading-tight tracking-tighter text-sidebar">
+                                                    {title}
+                                                </span>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

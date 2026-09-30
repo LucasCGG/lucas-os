@@ -19,7 +19,7 @@ The Design is heavily inspired by caelestial-dots/shell
 - About Me app → Learn more about me directly in LucasOS.
 - Retro dock → Pinned apps with a vintage vibe.
 - Dynamic app loading → Launch apps via commands (open about, open terminal).
-- Easter eggs & fake crashes → Yes, you can try deleting system32 😈.
+- Easter eggs & fake crashes.
 - Boot screen animations → Playful loading screens inspired by old-school systems.
 - Best on desktop → Mobile support is experimental for now.
 
