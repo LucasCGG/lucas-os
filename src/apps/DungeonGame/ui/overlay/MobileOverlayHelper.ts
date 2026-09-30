@@ -16,7 +16,9 @@ import {
 
 export class MobileOverlayHelper {
   private static readonly PADDING = 10;
-  private static readonly PANEL_WIDTH = 176;
+  // Clears the OS "exit to home" button floating in the top-left corner.
+  public static readonly PANEL_X = 60;
+  public static readonly PANEL_WIDTH = 176;
   private static readonly BAR_HEIGHT = 6;
 
   public static renderPlayerOverlay(ctx: CanvasRenderingContext2D, player: Player): void {
@@ -46,7 +48,7 @@ export class MobileOverlayHelper {
 
     const gun = player.getGun();
 
-    const x = MobileOverlayHelper.PADDING;
+    const x = MobileOverlayHelper.PANEL_X;
     const y = MobileOverlayHelper.PADDING;
     const panelWidth = MobileOverlayHelper.PANEL_WIDTH;
     const contentX = x + 8;

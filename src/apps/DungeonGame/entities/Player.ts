@@ -1,4 +1,4 @@
-import { Transform } from "../engine";
+import { Time, Transform } from "../engine";
 import { Entity } from "./Entity";
 import { Animation } from "../sprites/Animation";
 import { Animator } from "../sprites/Animator";
@@ -15,9 +15,10 @@ import { Footsteps } from "../audio/Footsteps";
 import { Armor } from "../items/Armor";
 
 const PLAYER_ANIMATION_SPEED = 0.1;
-const REGEN_INTERVAL = 30;
+const REGEN_INTERVAL = 0.5;
 const REGEN_PER_INTERVAL = 1;
 const PLAYER_BASE_DAMAGE = 40;
+const INVINCIBLE_BLINK_RATE = 0.08;
 const PLAYER_MELEE_ATTACK_SOUNDS = ["ninja_attack_1", "ninja_attack_2"];
 
 type Facing = "front" | "left" | "right" | "back";
@@ -33,7 +34,7 @@ export class Player extends Entity {
     private moveInputY = 0;
 
     private inputRotation = 0;
-    private updateCounter = 0;
+    private regenTimer = 0;
 
     private aimTarget: {
         x: number;
@@ -253,12 +254,12 @@ export class Player extends Entity {
 
         this.footsteps.update(deltaTime, moving);
 
-        this.updateCounter++;
+        this.regenTimer += deltaTime;
 
-        if (this.updateCounter >= REGEN_INTERVAL) {
+        if (this.regenTimer >= REGEN_INTERVAL) {
             this.stats.setCurrentHealth(this.stats.getCurrentHealth() + REGEN_PER_INTERVAL);
 
-            this.updateCounter = 0;
+            this.regenTimer -= REGEN_INTERVAL;
         }
 
         this.sprite?.update(deltaTime);
@@ -286,6 +287,11 @@ export class Player extends Entity {
     }
 
     protected draw(ctx: CanvasRenderingContext2D): void {
+        // Blink while invincible after taking a hit (render() wraps this in save/restore).
+        if (this.stats.isInvincible() && Math.floor(Time.getTime() / INVINCIBLE_BLINK_RATE) % 2 === 0) {
+            ctx.globalAlpha *= 0.35;
+        }
+
         this.sprite?.paint(ctx);
     }
 

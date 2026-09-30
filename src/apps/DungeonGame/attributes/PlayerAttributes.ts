@@ -1,6 +1,10 @@
 import { EntityAttributes } from "./EntityAttributes";
+import { Time } from "../engine/Time";
+
+const INVINCIBILITY_DURATION = 0.5;
 
 export class PlayerAttributes extends EntityAttributes {
+  private invincibleUntil = 0;
   private experienceToNextLevel = 100;
   private equipmentDefense = 0;
   private equipmentHealth = 0;
@@ -14,6 +18,25 @@ export class PlayerAttributes extends EntityAttributes {
     this.equipmentSpeed = speed;
     this.maxHealth = Math.max(1, oldMax - oldEquipmentHealth + health);
     this.currentHealth = Math.min(this.currentHealth, this.maxHealth);
+  }
+
+  override modifyHealth(delta: number): void {
+    if (delta < 0) {
+      if (this.isInvincible()) {
+        return;
+      }
+      this.invincibleUntil = Time.getTime() + INVINCIBILITY_DURATION;
+    }
+    super.modifyHealth(delta);
+  }
+
+  isInvincible(): boolean {
+    return Time.getTime() < this.invincibleUntil;
+  }
+
+  override revive(): void {
+    super.revive();
+    this.invincibleUntil = 0;
   }
 
   override getMaxHealth(): number { return this.maxHealth; }

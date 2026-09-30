@@ -2,6 +2,9 @@ import { GameScene } from "./GameScene";
 import { KeyListener } from "./input/KeyListener";
 import { Time } from "./Time";
 
+// Cap a single frame's step so a stalled tab or slow frame can't teleport entities.
+const MAX_DELTA_TIME = 0.1;
+
 export class Engine {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -39,7 +42,7 @@ export class Engine {
 
     const loop = (): void => {
       const now = Time.getTime();
-      const deltaTime = now - this.lastTime;
+      const deltaTime = Math.min(now - this.lastTime, MAX_DELTA_TIME);
       this.lastTime = now;
 
       this.ctx.fillStyle = this.clearColor;

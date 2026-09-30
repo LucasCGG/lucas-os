@@ -9,6 +9,10 @@ import { AudioManager } from "../audio/AudioManager";
 
 const IMPACT_SOUNDS = ["impact_1", "impact_2"];
 
+// Projectile speeds are tuned in pixels per frame at 60fps; scale by deltaTime so
+// they fly at the same speed regardless of the device's refresh rate.
+const REFERENCE_FPS = 60;
+
 export interface ProjectileOptions {
   maxRange?: number;
   falloffStart?: number;
@@ -48,9 +52,12 @@ export class Projectile extends Entity {
     return this.stats.isDestroyed();
   }
 
-  update(_deltaTime: number): void {
+  update(deltaTime: number): void {
     const prev = this.transform;
-    const newTransform = this.moveStrategy.move(prev, this.stats.getSpeed());
+    const newTransform = this.moveStrategy.move(
+      prev,
+      this.stats.getSpeed() * deltaTime * REFERENCE_FPS,
+    );
 
     // Accumulate real distance travelled this step.
     this.distanceTravelled += Math.hypot(newTransform.x - prev.x, newTransform.y - prev.y);

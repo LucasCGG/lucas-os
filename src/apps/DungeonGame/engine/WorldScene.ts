@@ -41,6 +41,12 @@ import { MobileInput } from "./MobileInput";
 import { isMobileDevice } from "../utils/isMobileDevice";
 import { OverlayHelper } from "../ui/overlay/OverlayHelper";
 import { MobileOverlayHelper } from "../ui/overlay/MobileOverlayHelper";
+import { drawPanel, TEXT_PRIMARY, TEXT_SECONDARY } from "../ui/overlay/overlayPrimitives";
+
+// The desktop window titlebar is drawn over the top of the canvas.
+const DESKTOP_TITLEBAR_HEIGHT = 45;
+// Width reserved on the right for the mobile HUD buttons (48px + padding).
+const MOBILE_HUD_BUTTON_COLUMN = 72;
 
 export abstract class WorldScene extends GameScene implements EntityDelegator {
     protected keys = KeyListener.get();
@@ -466,18 +472,29 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
             return;
         }
 
+        // Sub-step at no coarser than 60fps so fast projectiles can't tunnel through
+        // targets on low-framerate devices.
+        const steps = Math.max(1, Math.ceil(deltaTime * 60));
+        const stepTime = deltaTime / steps;
+
         for (const projectile of this.projectiles) {
             projectile.setActive(this.inActiveRange(projectile.transform));
 
-            projectile.update(deltaTime);
+            for (let step = 0; step < steps && !projectile.getAttributes().isDestroyed(); step++) {
+                projectile.update(stepTime);
 
-            if (projectile.transform.intersects(player.transform)) {
-                projectile.collidesWith(player);
-            }
+                if (this.hitsWall(projectile.transform)) {
+                    break;
+                }
 
-            for (const enemy of this.enemies) {
-                if (projectile.transform.intersects(enemy.transform)) {
-                    projectile.collidesWith(enemy);
+                if (projectile.transform.intersects(player.transform)) {
+                    projectile.collidesWith(player);
+                }
+
+                for (const enemy of this.enemies) {
+                    if (projectile.transform.intersects(enemy.transform)) {
+                        projectile.collidesWith(enemy);
+                    }
                 }
             }
         }
@@ -1007,17 +1024,98 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         }
     }
 
+    /**
+     * Where the status bar and minimap go. On desktop the canvas sits under the window
+     * titlebar, so the bar is pushed down to clear it. On mobile there is no titlebar:
+     * everything sits at the very top, between the stats panel and the HUD buttons.
+     */
+    private getStatusLayout(): {
+        barY: number;
+        mapX: number;
+        mapY: number;
+        mapRadius: number;
+        centerLeft: number;
+        centerRight: number;
+    } {
+        if (this.isMobile) {
+            const mapRadius = 34;
+            const mapX = this.width - MOBILE_HUD_BUTTON_COLUMN - mapRadius - 8;
+
+            return {
+                barY: 0,
+                mapX,
+                mapY: mapRadius + 10,
+                mapRadius,
+                centerLeft: MobileOverlayHelper.PANEL_X + MobileOverlayHelper.PANEL_WIDTH + 10,
+                centerRight: mapX - mapRadius - 10,
+            };
+        }
+
+        const mapRadius = 48;
+        const barY = DESKTOP_TITLEBAR_HEIGHT;
+
+        return {
+            barY,
+            mapX: this.width - mapRadius - 18,
+            mapY: barY + mapRadius + 8,
+            mapRadius,
+            centerLeft: 0,
+            centerRight: this.width,
+        };
+    }
+
+    /** Compact two-line status pill drawn at the top center on mobile. */
+    private renderMobileStatusText(ctx: CanvasRenderingContext2D, title: string, subtitle: string): void {
+        const { centerLeft, centerRight } = this.getStatusLayout();
+        const width = Math.min(260, Math.max(0, centerRight - centerLeft));
+
+        if (width < 80) {
+            return;
+        }
+
+        const x = centerLeft + (centerRight - centerLeft - width) / 2;
+        const y = 10;
+
+        ctx.save();
+        drawPanel(ctx, x, y, width, 38);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.font = "bold 11px monospace";
+        ctx.fillStyle = TEXT_PRIMARY;
+        ctx.fillText(title, x + width / 2, y + 7, width - 12);
+        ctx.font = "10px monospace";
+        ctx.fillStyle = TEXT_SECONDARY;
+        ctx.fillText(subtitle, x + width / 2, y + 22, width - 12);
+        ctx.restore();
+    }
+
+    /** Label under the minimap on mobile, or in the bar's bottom-right corner on desktop. */
+    private renderMinimapLabel(ctx: CanvasRenderingContext2D, label: string): void {
+        const { barY, mapX, mapY, mapRadius } = this.getStatusLayout();
+
+        ctx.fillStyle = "#9da5b4";
+        ctx.font = "10px monospace";
+
+        if (this.isMobile) {
+            ctx.save();
+            ctx.textAlign = "center";
+            ctx.textBaseline = "top";
+            ctx.fillText(label, mapX, mapY + mapRadius + 4);
+            ctx.restore();
+            return;
+        }
+
+        ctx.textAlign = "right";
+        ctx.fillText(label, this.width - 16, barY + 104);
+        ctx.textAlign = "left";
+    }
+
     protected renderDungeonStatus(ctx: CanvasRenderingContext2D): void {
         const layout = this.dungeonLayout;
         if (layout === null || this.player === null) return;
 
-        const topPadding = 45;
+        const { barY, mapX, mapY, mapRadius } = this.getStatusLayout();
         const barH = 112;
-        const barY = topPadding;
-        ctx.fillStyle = "rgba(8, 10, 16, 0.9)";
-        ctx.fillRect(0, barY, this.width, barH);
-        ctx.strokeStyle = "rgba(255,255,255,0.14)";
-        ctx.strokeRect(0.5, barY + 0.5, this.width - 1, barH - 1);
 
         const currentRoom = layout.rooms.find((room) => {
             const origin = this.getRoomOrigin(room, layout);
@@ -1033,17 +1131,25 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         const spawned = Math.min(total, this.enemySpawner.getSpawnedCount());
         const living = this.enemies.filter((enemy) => !enemy.getStats().isDestroyed()).length;
 
-        ctx.font = "bold 12px monospace";
-        ctx.fillStyle = "#f2f4f8";
-        ctx.textAlign = "left";
-        ctx.fillText(this.getStageLabel(), 16, barY + 17);
-        ctx.font = "11px monospace";
-        ctx.fillStyle = "#9da5b4";
-        ctx.fillText(`WAVE ${spawned}/${total}   LIVING ${living}`, 16, barY + 38);
+        const waveText = `WAVE ${spawned}/${total}   LIVING ${living}`;
 
-        const mapRadius = 48;
-        const mapX = this.width - mapRadius - 18;
-        const mapY = barY + mapRadius + 8;
+        if (this.isMobile) {
+            this.renderMobileStatusText(ctx, this.getStageLabel(), waveText);
+        } else {
+            ctx.fillStyle = "rgba(8, 10, 16, 0.9)";
+            ctx.fillRect(0, barY, this.width, barH);
+            ctx.strokeStyle = "rgba(255,255,255,0.14)";
+            ctx.strokeRect(0.5, barY + 0.5, this.width - 1, barH - 1);
+
+            ctx.font = "bold 12px monospace";
+            ctx.fillStyle = "#f2f4f8";
+            ctx.textAlign = "left";
+            ctx.fillText(this.getStageLabel(), 16, barY + 17);
+            ctx.font = "11px monospace";
+            ctx.fillStyle = "#9da5b4";
+            ctx.fillText(waveText, 16, barY + 38);
+        }
+
         const mapDiameter = mapRadius * 2;
         const scale = Math.min(
             (mapDiameter - 12) / this.worldWidth,
@@ -1102,15 +1208,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        ctx.fillStyle = "#9da5b4";
-        ctx.font = "10px monospace";
-        ctx.textAlign = "right";
-        ctx.fillText(
-            `ROOM ${Math.max(1, currentIndex + 1)}/${layout.rooms.length}`,
-            this.width - 16,
-            barY + 104
-        );
-        ctx.textAlign = "left";
+        this.renderMinimapLabel(ctx, `ROOM ${Math.max(1, currentIndex + 1)}/${layout.rooms.length}`);
     }
 
     protected renderBossBar(ctx: CanvasRenderingContext2D): void {
@@ -1119,9 +1217,14 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         );
         if (boss === undefined) return;
 
-        const barW = Math.min(520, this.width - 48);
-        const barX = (this.width - barW) / 2;
-        const barY = 12;
+        // On mobile, sit below the status pill and stay between the stats panel and minimap.
+        const { centerLeft, centerRight } = this.getStatusLayout();
+        const available = this.isMobile ? centerRight - centerLeft : this.width - 48;
+        const barW = Math.max(120, Math.min(520, available));
+        const barX = this.isMobile
+            ? centerLeft + (centerRight - centerLeft - barW) / 2
+            : (this.width - barW) / 2;
+        const barY = this.isMobile ? 62 : 12;
         const barH = 18;
         const ratio = Math.max(
             0,
@@ -1159,11 +1262,8 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
     protected renderTutorialStatus(ctx: CanvasRenderingContext2D): void {
         if (this.player === null) return;
 
-        const barY = 45;
+        const { barY, mapX, mapY, mapRadius } = this.getStatusLayout();
         const barH = 112;
-        const mapRadius = 48;
-        const mapX = this.width - mapRadius - 18;
-        const mapY = barY + mapRadius + 8;
         const scale = Math.min(
             (mapRadius * 2 - 12) / this.worldWidth,
             (mapRadius * 2 - 12) / this.worldHeight
@@ -1173,17 +1273,21 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
             y: mapY - (this.worldHeight * scale) / 2 + y * scale,
         });
 
-        ctx.fillStyle = "rgba(8, 10, 16, 0.9)";
-        ctx.fillRect(0, barY, this.width, barH);
-        ctx.strokeStyle = "rgba(255,255,255,0.14)";
-        ctx.strokeRect(0.5, barY + 0.5, this.width - 1, barH - 1);
-        ctx.font = "bold 12px monospace";
-        ctx.fillStyle = "#f2f4f8";
-        ctx.textAlign = "left";
-        ctx.fillText(this.getStageLabel(), 16, barY + 17);
-        ctx.font = "11px monospace";
-        ctx.fillStyle = "#9da5b4";
-        ctx.fillText("TUTORIAL", 16, barY + 38);
+        if (this.isMobile) {
+            this.renderMobileStatusText(ctx, this.getStageLabel(), "TUTORIAL");
+        } else {
+            ctx.fillStyle = "rgba(8, 10, 16, 0.9)";
+            ctx.fillRect(0, barY, this.width, barH);
+            ctx.strokeStyle = "rgba(255,255,255,0.14)";
+            ctx.strokeRect(0.5, barY + 0.5, this.width - 1, barH - 1);
+            ctx.font = "bold 12px monospace";
+            ctx.fillStyle = "#f2f4f8";
+            ctx.textAlign = "left";
+            ctx.fillText(this.getStageLabel(), 16, barY + 17);
+            ctx.font = "11px monospace";
+            ctx.fillStyle = "#9da5b4";
+            ctx.fillText("TUTORIAL", 16, barY + 38);
+        }
 
         ctx.save();
         ctx.beginPath();
@@ -1213,11 +1317,7 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         ctx.strokeStyle = "rgba(255,255,255,0.65)";
         ctx.lineWidth = 2;
         ctx.stroke();
-        ctx.fillStyle = "#9da5b4";
-        ctx.font = "10px monospace";
-        ctx.textAlign = "right";
-        ctx.fillText("TUTORIAL", this.width - 16, barY + 104);
-        ctx.textAlign = "left";
+        this.renderMinimapLabel(ctx, "TUTORIAL");
     }
 
     private buildMinimapTiles(
