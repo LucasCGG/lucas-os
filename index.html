@@ -12,7 +12,11 @@
         <script type="module" src="/src/main.tsx"></script>
 
         <!-- Zero-size instead of display:none: gradients inside a display:none sprite don't render. -->
-        <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="position: absolute; width: 0; height: 0; overflow: hidden">
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            style="position: absolute; width: 0; height: 0; overflow: hidden"
+        >
             <symbol id="icn-logo-simple" viewBox="0 0 512 512">
                 <path
                     fill-rule="evenodd"
@@ -117,6 +121,25 @@
                     height="437"
                     preserveAspectRatio="xMidYMid slice"
                     clip-path="url(#icn-dungeon-app-clip)"
+                />
+            </symbol>
+
+            <symbol id="icn-taskmanager-app" viewBox="0 0 512 512">
+                <rect x="0" y="0" width="512" height="512" rx="88" fill="#392107" />
+                <rect x="38" y="37" width="436" height="437" rx="52" fill="#DBAA55" />
+                <path
+                    d="M38 120H474M38 200H474M38 280H474M38 360H474M140 37V474M240 37V474M340 37V474"
+                    stroke="#392107"
+                    stroke-opacity="0.18"
+                    stroke-width="8"
+                />
+                <path
+                    d="M60 330L130 330L170 230L215 390L265 150L310 300L350 270L452 270"
+                    fill="none"
+                    stroke="#392107"
+                    stroke-width="30"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
                 />
             </symbol>
 
@@ -563,15 +586,13 @@
             </symbol>
 
             <symbol id="icn-projects-app" viewBox="0 0 512 512">
-                <use href="#icn-folder" />
+                <rect x="0" y="0" width="512" height="512" rx="88" fill="#392107" />
+                <rect x="38" y="37" width="436" height="437" rx="52" fill="#DBAA55" />
                 <path
-                    d="M206 262L158 308L206 354M306 262L354 308L306 354M276 248L236 368"
-                    fill="none"
-                    stroke="#5D341A"
-                    stroke-width="26"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
+                    d="M98 166C98 149.431 111.431 136 128 136H204C211.957 136 219.587 139.161 225.213 144.787L246 166H386C402.569 166 416 179.431 416 196V354C416 370.569 402.569 384 386 384H128C111.431 384 98 370.569 98 354V166Z"
+                    fill="#392107"
                 />
+                <rect x="126" y="214" width="262" height="142" rx="14" fill="#DBAA55" />
             </symbol>
 
             <symbol id="icn-image-file" viewBox="0 0 512 512">
@@ -582,9 +603,28 @@
                     stroke-width="24"
                     stroke-linejoin="round"
                 />
-                <path d="M320 40V144H424" fill="none" stroke="#392107" stroke-width="24" stroke-linejoin="round" />
-                <path d="M128 400L200 300L256 368L296 320L376 400H128Z" fill="#90A88D" stroke="#392107" stroke-width="16" stroke-linejoin="round" />
-                <circle cx="304" cy="248" r="28" fill="#ED9965" stroke="#392107" stroke-width="16" />
+                <path
+                    d="M320 40V144H424"
+                    fill="none"
+                    stroke="#392107"
+                    stroke-width="24"
+                    stroke-linejoin="round"
+                />
+                <path
+                    d="M128 400L200 300L256 368L296 320L376 400H128Z"
+                    fill="#90A88D"
+                    stroke="#392107"
+                    stroke-width="16"
+                    stroke-linejoin="round"
+                />
+                <circle
+                    cx="304"
+                    cy="248"
+                    r="28"
+                    fill="#ED9965"
+                    stroke="#392107"
+                    stroke-width="16"
+                />
             </symbol>
 
             <symbol id="icn-text-file" viewBox="0 0 512 512">
@@ -595,8 +635,20 @@
                     stroke-width="24"
                     stroke-linejoin="round"
                 />
-                <path d="M320 40V144H424" fill="none" stroke="#392107" stroke-width="24" stroke-linejoin="round" />
-                <path d="M144 224H360M144 288H360M144 352H296" fill="none" stroke="#7E4B27" stroke-width="24" stroke-linecap="round" />
+                <path
+                    d="M320 40V144H424"
+                    fill="none"
+                    stroke="#392107"
+                    stroke-width="24"
+                    stroke-linejoin="round"
+                />
+                <path
+                    d="M144 224H360M144 288H360M144 352H296"
+                    fill="none"
+                    stroke="#7E4B27"
+                    stroke-width="24"
+                    stroke-linecap="round"
+                />
             </symbol>
 
             <symbol id="icn-pdf-file" viewBox="0 0 512 512">
@@ -607,25 +659,78 @@
                     stroke-width="24"
                     stroke-linejoin="round"
                 />
-                <path d="M320 40V144H424" fill="none" stroke="#392107" stroke-width="24" stroke-linejoin="round" />
-                <rect x="112" y="296" width="280" height="112" rx="16" fill="#ED9965" stroke="#392107" stroke-width="16" />
-                <text x="252" y="378" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="76" fill="#392107">PDF</text>
+                <path
+                    d="M320 40V144H424"
+                    fill="none"
+                    stroke="#392107"
+                    stroke-width="24"
+                    stroke-linejoin="round"
+                />
+                <rect
+                    x="112"
+                    y="296"
+                    width="280"
+                    height="112"
+                    rx="16"
+                    fill="#ED9965"
+                    stroke="#392107"
+                    stroke-width="16"
+                />
+                <text
+                    x="252"
+                    y="378"
+                    text-anchor="middle"
+                    font-family="monospace"
+                    font-weight="bold"
+                    font-size="76"
+                    fill="#392107"
+                >
+                    PDF
+                </text>
             </symbol>
 
             <symbol id="icn-arrow-left" viewBox="0 0 512 512">
-                <path d="M424 256H96M224 128L96 256L224 384" fill="none" stroke="var(--ic-primary-color, currentColor)" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                    d="M424 256H96M224 128L96 256L224 384"
+                    fill="none"
+                    stroke="var(--ic-primary-color, currentColor)"
+                    stroke-width="56"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
             </symbol>
 
             <symbol id="icn-arrow-right" viewBox="0 0 512 512">
-                <path d="M88 256H416M288 128L416 256L288 384" fill="none" stroke="var(--ic-primary-color, currentColor)" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                    d="M88 256H416M288 128L416 256L288 384"
+                    fill="none"
+                    stroke="var(--ic-primary-color, currentColor)"
+                    stroke-width="56"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
             </symbol>
 
             <symbol id="icn-arrow-up" viewBox="0 0 512 512">
-                <path d="M256 424V96M128 224L256 96L384 224" fill="none" stroke="var(--ic-primary-color, currentColor)" stroke-width="56" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                    d="M256 424V96M128 224L256 96L384 224"
+                    fill="none"
+                    stroke="var(--ic-primary-color, currentColor)"
+                    stroke-width="56"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
             </symbol>
 
             <symbol id="icn-external" viewBox="0 0 512 512">
-                <path d="M296 72H440V216M440 72L248 264M376 296V408C376 426 362 440 344 440H104C86 440 72 426 72 408V168C72 150 86 136 104 136H216" fill="none" stroke="var(--ic-primary-color, currentColor)" stroke-width="48" stroke-linecap="round" stroke-linejoin="round" />
+                <path
+                    d="M296 72H440V216M440 72L248 264M376 296V408C376 426 362 440 344 440H104C86 440 72 426 72 408V168C72 150 86 136 104 136H216"
+                    fill="none"
+                    stroke="var(--ic-primary-color, currentColor)"
+                    stroke-width="48"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                />
             </symbol>
 
             <symbol id="icn-trash-bin" viewBox="0 0 512 512">

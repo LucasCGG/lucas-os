@@ -1,5 +1,6 @@
 import { useFileSystemStore } from "../../atoms/fileSystem";
-import { useTerminalStore, useWindowStore } from "../../atoms";
+import { openDialog, useCrashStore, useTerminalStore, useWindowStore } from "../../atoms";
+import { guiltyDialog } from "../../components/AppDialog/presets";
 import { BufferSpec, MiniVim } from "../../apps/Console/MiniVim";
 
 type FileSystemNode = {
@@ -9,6 +10,7 @@ type FileSystemNode = {
     mime?: string;
     children?: Record<string, FileSystemNode>;
     hidden?: boolean;
+    critical?: boolean;
     appId?: string;
     title?: string;
 };
@@ -76,6 +78,16 @@ function guessMime(name: string): string {
             return "application/octet-stream";
     }
 }
+
+function touchesHidden(abs: string[]): boolean {
+    return abs.slice(1).some((_, i) => !!resolvePath(abs.slice(0, i + 2))?.hidden);
+}
+
+function isCritical(node: FileSystemNode): boolean {
+    return !!node.critical || Object.values(node.children ?? {}).some(isCritical);
+}
+
+const KERNEL_PANIC_DELAY_MS = 900;
 
 function writeTree(mutator: (tree: Record<string, FileSystemNode>) => void) {
     useFileSystemStore.setState((s: any) => {
@@ -182,6 +194,7 @@ Available commands:
             const abs = toAbsolutePath(raw);
             const node = resolvePath(abs);
             if (!node || node.type !== "directory") return `cd: no such directory: ${raw}`;
+            if (touchesHidden(abs) && !touchesHidden(getCurrentPath())) openDialog(guiltyDialog());
             useFileSystemStore.setState({ currentPath: abs });
             return `Moved to ${abs.join("/")}`;
         },
@@ -220,36 +233,40 @@ Available commands:
             const node = currentDirNode();
             const file = node.children?.[name];
             if (!file || file.type !== "file") return `cat: ${name}: No such file`;
+            if (touchesHidden([...getCurrentPath(), name])) openDialog(guiltyDialog());
             return file.content ?? "";
         },
 
         rm: (args: string[]): CommandOutput => {
             if (duckMode) return "rm: Ducks never forget. But they also don't delete.";
-            const name = args[0];
-            if (!name) return "Usage: rm [name]";
+            const name = args.find((a) => !a.startsWith("-"));
+            if (!name) return "Usage: rm [-rf] [name]";
 
             const here = currentDirNode();
-            if (!here.children?.[name]) {
+            const target = here.children?.[name];
+            if (!target) {
                 return `rm: cannot remove '${name}': No such file or directory`;
             }
 
-            const dangerous = new Set(["kernel", "system32"]);
-            if (dangerous.has(name)) {
-                return confirm(`rm:"${name}". Are you sure? (Y/N)`, () => {
-                    writeTree((tree) => {
-                        let node: FileSystemNode = tree["~"];
-                        for (const p of getCurrentPath().slice(1)) node = (node.children as any)[p];
-                        if (node.children) delete node.children[name];
-                    });
-                    return `'${name}' removed. May the ducks be with you.`;
+            const remove = () =>
+                writeTree((tree) => {
+                    let node: FileSystemNode = tree["~"];
+                    for (const p of getCurrentPath().slice(1)) node = (node.children as any)[p];
+                    if (node.children) delete node.children[name];
+                });
+
+            if (isCritical(target)) {
+                return confirm(`rm: '${name}' is a protected system file. Are you sure? (Y/N)`, () => {
+                    remove();
+                    setTimeout(
+                        () => useCrashStore.getState().crash({ kind: "rm", file: name }),
+                        KERNEL_PANIC_DELAY_MS
+                    );
+                    return `'${name}' removed.\nkernel: wait. what was that?`;
                 });
             }
 
-            writeTree((tree) => {
-                let node: FileSystemNode = tree["~"];
-                for (const p of getCurrentPath().slice(1)) node = (node.children as any)[p];
-                if (node.children) delete node.children[name];
-            });
+            remove();
             return `'${name}' removed.`;
         },
 
@@ -354,7 +371,7 @@ Available commands:
             const files = args.length ? args : ["[No Name]"];
 
             const specs: BufferSpec[] = files.map((raw) => {
-                let pathArr = raw.startsWith("~") ? ["~"] : [...getCurrentPath()];
+                const pathArr = raw.startsWith("~") ? ["~"] : [...getCurrentPath()];
                 const segs = (raw.startsWith("~") ? raw.replace(/^~\/?/, "") : raw)
                     .split("/")
                     .filter(Boolean);

@@ -6,3 +6,4 @@ export * from "./PdfViewer";
 export * from "./2048Replica"
 export * from "./DungeonGame";
 export * from "./ProjectsApp";
+export * from "./TaskManager";

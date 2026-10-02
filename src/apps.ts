@@ -6,18 +6,10 @@ import { DungeonGame } from "./apps/DungeonGame";
 import { MailApp } from "./apps/MailApp";
 import { PdfViewer } from "./apps/PdfViewer";
 import { ProjectsApp } from "./apps/ProjectsApp";
+import { TaskManager } from "./apps/TaskManager";
 import { mountApps } from "./atoms/fileSystem";
 
 export const appsRegistry = {
-    console: {
-        id: "console",
-        title: "Console",
-        component: Console,
-        icon: "icn-console-app",
-        defaultSize: { width: 500, height: 400 },
-        startPosition: { x: 100, y: 100 },
-        pinned: true,
-    },
     about: {
         id: "about",
         title: "About Me",
@@ -50,22 +42,6 @@ export const appsRegistry = {
         defaultSize: { width: 700, height: 500 },
         pinned: true,
     },
-    pdfviewer: {
-        id: "pdfviewer",
-        title: "Pdf Viewer",
-        component: PdfViewer,
-        icon: "", // TODO: Implement "Browser Icon"
-        defaultSize: { width: 700, height: 500 },
-        pinned: false,
-    },
-    SwitcheruGameBecauseNamingConventions: {
-        id: "SwitcheruGameBecauseNamingConventions",
-        title: "2048",
-        component: SwitcheruGameBecauseNamingConventions,
-        icon: "icn-2048-app",
-        defaultSize: {width: 300, height:400},
-        pinned: true,
-    },
     dungeon: {
         id: "dungeon",
         title: "Dungeon",
@@ -73,7 +49,42 @@ export const appsRegistry = {
         icon: "icn-dungeon-app",
         defaultSize: { width: 820, height: 620 },
         pinned: true,
+        folder: "games",
         mobileImmersive: true,
+    },
+    taskmanager: {
+        id: "taskmanager",
+        title: "Task Manager",
+        component: TaskManager,
+        icon: "icn-taskmanager-app",
+        defaultSize: { width: 640, height: 480 },
+        pinned: true,
+    },
+    console: {
+        id: "console",
+        title: "Console",
+        component: Console,
+        icon: "icn-console-app",
+        defaultSize: { width: 500, height: 400 },
+        startPosition: { x: 100, y: 100 },
+        pinned: true,
+    },
+    SwitcheruGameBecauseNamingConventions: {
+        id: "SwitcheruGameBecauseNamingConventions",
+        title: "2048",
+        component: SwitcheruGameBecauseNamingConventions,
+        icon: "icn-2048-app",
+        defaultSize: { width: 300, height: 400 },
+        pinned: false,
+        folder: "games",
+    },
+    pdfviewer: {
+        id: "pdfviewer",
+        title: "Pdf Viewer",
+        component: PdfViewer,
+        icon: "", // TODO: Implement "Browser Icon"
+        defaultSize: { width: 700, height: 500 },
+        pinned: false,
     },
 };
 

@@ -8,9 +8,23 @@ module.exports = {
           '0%': { transform: 'translate(-50%, -50%) rotate(0deg)' },
           '100%': { transform: 'translate(-50%, -50%) rotate(360deg)' },
         },
+        'dialog-pop': {
+          '0%': { scale: '0.85', opacity: '0' },
+          '100%': { scale: '1', opacity: '1' },
+        },
+        'dialog-shake': {
+          '0%, 100%': { translate: '0 0' },
+          '20%': { translate: '-8px 2px' },
+          '40%': { translate: '7px -3px' },
+          '60%': { translate: '-5px 3px' },
+          '80%': { translate: '4px -1px' },
+        },
       },
       animation: {
         'spin-center': 'spin-center 1.5s linear infinite',
+        'dialog-pop': 'dialog-pop 120ms ease-out',
+        'dialog-shake': 'dialog-shake 0.35s linear 2',
+        'dialog-pop-shake': 'dialog-pop 120ms ease-out, dialog-shake 0.35s linear 120ms 2',
       },
       cursor: {
         arrow: 'url("/assets/cursors/arrow.png") 0 0, auto',

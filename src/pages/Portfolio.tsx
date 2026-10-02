@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { AppCustomWaitCursor } from "../components";
+import { AppCustomWaitCursor, SystemCrash } from "../components";
 import { Desktop, Mobile } from "../layout";
 import { RetroStart } from "../components/RetroStartup/RetroStartup";
 import { useDynamicTabTitle, useIsMobile } from "../hooks";
@@ -79,6 +79,8 @@ const Portfolio = () => {
                     <Mobile />
                 </div>
             )}
+
+            <SystemCrash />
         </>
     );
 };

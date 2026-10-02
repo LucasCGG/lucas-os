@@ -9,8 +9,8 @@ export type FileSystemNode = {
     mime?: string;
     src?: string;
     hidden?: boolean;
+    critical?: boolean;
 
-    /** App launchers in ~/apps: opening the file opens this app. */
     appId?: string;
     title?: string;
     icon?: string;
@@ -335,8 +335,46 @@ PRETTY_NAME="Arch Replica (Hyprland)"`,
                     },
                 },
 
+                lib: {
+                    type: "directory",
+                    critical: true,
+                    children: {
+                        "libc.so.6": {
+                            type: "file",
+                            critical: true,
+                            mime: "application/octet-stream",
+                            content: "\u007fELF lucasos libc 2.39\nEverything links against this. Everything.",
+                        },
+                        "libfeelings.so.1": {
+                            type: "file",
+                            critical: true,
+                            mime: "application/octet-stream",
+                            content: "Required for the kernel to process emotions.\nDo not remove. It will notice.",
+                        },
+                        modules: {
+                            type: "directory",
+                            critical: true,
+                            children: {
+                                "fakehw.ko": {
+                                    type: "file",
+                                    critical: true,
+                                    mime: "application/octet-stream",
+                                    content: "Hardware abstraction module.\nPretends the hardware exists.",
+                                },
+                                "quack.ko": {
+                                    type: "file",
+                                    critical: true,
+                                    mime: "application/octet-stream",
+                                    content: "Quack driver. Loaded before everything else, for reasons.",
+                                },
+                            },
+                        },
+                    },
+                },
+
                 "vmlinuz-lucasos": {
                     type: "file",
+                    critical: true,
                     mime: "application/octet-stream",
                     content: "Binary gibberish\nDo not delete this file. Seriously.",
                 },
@@ -441,7 +479,7 @@ export const useFileSystemStore = create<FileSystemState>((set, get) => ({
     },
 }));
 
-type AppLauncher = { id: string; title: string; icon: string };
+type AppLauncher = { id: string; title: string; icon: string; folder?: string };
 
 /**
  * Fills ~/apps with one launcher per app, named by app id so `ls apps` lines up with `open <id>`.
@@ -452,13 +490,20 @@ export function mountApps(apps: AppLauncher[]): void {
 
     // Apps without an icon (e.g. the PDF viewer) need a file to open, so they aren't launchable on their own.
     for (const app of apps.filter((a) => a.icon)) {
-        children[app.id] = {
+        let dir = children;
+        if (app.folder) {
+            children[app.folder] ??= { type: "directory", children: {} };
+            dir = children[app.folder].children!;
+        }
+        const path = ["~/apps", app.folder, app.id].filter(Boolean).join("/");
+
+        dir[app.id] = {
             type: "file",
             mime: APP_MIME,
             appId: app.id,
             title: app.title,
             icon: app.icon,
-            content: `${app.title}\nRun "open ${app.id}" or "xdg-open ~/apps/${app.id}" to launch it.`,
+            content: `${app.title}\nRun "open ${app.id}" or "xdg-open ${path}" to launch it.`,
         };
     }
 
