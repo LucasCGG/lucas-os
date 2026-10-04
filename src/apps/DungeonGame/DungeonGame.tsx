@@ -177,15 +177,22 @@ export function DungeonGame() {
         window.addEventListener("keydown", onToggle);
 
         const init = async (): Promise<void> => {
-            const player = await Player.create(
-                "Player",
-                new Transform(120, 120, 52, 52, 0),
-                new Team("players")
-            );
+            const createPlayer = (): Promise<Player> =>
+                Player.create("Player", new Transform(120, 120, 52, 52, 0), new Team("players"));
+
+            // Moving between levels keeps the same player; restarting or starting a new run replaces it.
+            let player = await createPlayer();
 
             if (disposed) {
                 return;
             }
+
+            const freshRun = (start: () => void) => async (): Promise<void> => {
+                const next = await createPlayer();
+                if (disposed) return;
+                player = next;
+                start();
+            };
 
             const startLevel1 = (): void => {
                 setShowRoomEditor(false);
@@ -195,7 +202,7 @@ export function DungeonGame() {
 
                 const dungeon1 = new Level1(player);
 
-                dungeon1.onRestart = startLevel1;
+                dungeon1.onRestart = freshRun(startLevel1);
                 dungeon1.onMainMenu = goToMenu;
                 dungeon1.onExit = () => {
                   console.debug("exiting dungeon 1");
@@ -212,7 +219,7 @@ export function DungeonGame() {
                 player.getStats().revive();
 
                 const dungeon2 = new Level2(player);
-                dungeon2.onRestart = startLevel2;
+                dungeon2.onRestart = freshRun(startLevel2);
                 dungeon2.onMainMenu = goToMenu;
                 dungeon2.onExit = startLevel3;
 
@@ -225,7 +232,7 @@ export function DungeonGame() {
                 setInGame(true);
                 player.getStats().revive();
                 const dungeon3 = new Level3(player);
-                dungeon3.onRestart = startLevel3;
+                dungeon3.onRestart = freshRun(startLevel3);
                 dungeon3.onMainMenu = goToMenu;
                 dungeon3.onExit = goToMenu;
                 engine.setScene(dungeon3);
@@ -240,14 +247,14 @@ export function DungeonGame() {
                 const tutorial = new DungeonTutorial(player);
 
                 tutorial.onExit = startLevel1;
-                tutorial.onRestart = startTutorial;
+                tutorial.onRestart = freshRun(startTutorial);
                 tutorial.onMainMenu = goToMenu;
 
                 engine.setScene(tutorial);
                 void tutorial.load();
             };
 
-            startScene.onStart = startTutorial;
+            startScene.onStart = freshRun(startTutorial);
 
             startScene.onRoomEditor = () => {
                 setShowRoomEditor(true);

@@ -78,6 +78,9 @@ export class ArcherEnemy extends Enemy {
       team,
     );
 
+    // Hit for the level-scaled damage stat, not the bow's flat base damage.
+    weapon.setDamageOutput(stats.getDamage());
+
     enemy.weapon = weapon;
 
     return enemy;

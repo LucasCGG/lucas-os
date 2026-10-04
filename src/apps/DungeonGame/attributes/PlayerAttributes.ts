@@ -73,6 +73,17 @@ export class PlayerAttributes extends EntityAttributes {
       }
     }
 
+  /** XP needed to gain `levels` more levels from the current one (ignoring XP already banked). */
+  getExperienceForLevels(levels: number): number {
+    let total = 0;
+    let next = this.experienceToNextLevel;
+    for (let i = 0; i < levels; i++) {
+      total += next;
+      next = Math.round(next * 1.15);
+    }
+    return total;
+  }
+
   getExperienceToNextLevel(): number {
     return this.experienceToNextLevel;
   }

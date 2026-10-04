@@ -12,6 +12,7 @@ export interface CharacterSheets {
   idle: SpriteSheet;
   hurt?: DirectionalClip;
   death?: DirectionalClip;
+  attack?: DirectionalClip;
 }
 
 const walkUrls = import.meta.glob("../../assets/char/*_Walk.png", {

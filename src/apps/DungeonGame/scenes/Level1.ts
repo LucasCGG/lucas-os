@@ -14,8 +14,6 @@ import { DungeonGenerator } from "./rooms/DungeonGenerator";
 import { ROOM_TEMPLATES } from "./rooms/RoomCollection";
 import { Decoration } from "../objects/Decoration";
 import { AssetPool } from "../sprites/AssetPool";
-import { EntityAttributes } from "../attributes/EntityAttributes";
-import { Transform } from "../engine";
 
 export class Level1 extends WorldScene {
     private readonly scenePlayer: Player;
@@ -54,7 +52,7 @@ export class Level1 extends WorldScene {
         },
 
         damage: {
-            base: 25,
+            base: 14,
             perLevel: 2,
         },
 
@@ -195,18 +193,13 @@ export class Level1 extends WorldScene {
             );
             if (bossRoom !== undefined) {
                 const origin = this.getRoomOrigin(bossRoom, this.dungeonLayout);
-                const stats = new EntityAttributes(1800, 115, 52, 12);
-                stats.setXpReward(1000);
                 const boss = await FlyingDemonBoss.create(
-                    new Transform(
-                        origin.x + this.roomWidth(bossRoom) / 2 - 42,
-                        origin.y + this.roomHeight(bossRoom) / 2 - 42,
-                        84,
-                        84,
-                        0
+                    FlyingDemonBoss.spawnTransform(
+                        origin.x + this.roomWidth(bossRoom) / 2,
+                        origin.y + this.roomHeight(bossRoom) / 2
                     ),
                     this.enemyTeam,
-                    stats
+                    FlyingDemonBoss.createStats(this.player?.getStats() ?? null)
                 );
                 this.registerEnemy(boss);
             }

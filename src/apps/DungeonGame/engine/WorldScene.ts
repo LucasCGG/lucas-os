@@ -45,6 +45,8 @@ import { drawPanel, TEXT_PRIMARY, TEXT_SECONDARY } from "../ui/overlay/overlayPr
 
 // The desktop window titlebar is drawn over the top of the canvas.
 const DESKTOP_TITLEBAR_HEIGHT = 45;
+// Room kept free on each side of the desktop boss bar for the stage label and minimap.
+const BOSS_BAR_SIDE_CLEARANCE = 170;
 // Width reserved on the right for the mobile HUD buttons (48px + padding).
 const MOBILE_HUD_BUTTON_COLUMN = 72;
 
@@ -1218,43 +1220,52 @@ export abstract class WorldScene extends GameScene implements EntityDelegator {
         if (boss === undefined) return;
 
         // On mobile, sit below the status pill and stay between the stats panel and minimap.
-        const { centerLeft, centerRight } = this.getStatusLayout();
-        const available = this.isMobile ? centerRight - centerLeft : this.width - 48;
+        // On desktop, sit in the middle of the status band (below the window titlebar),
+        // clear of the stage label on the left and the minimap on the right.
+        const { barY: statusY, centerLeft, centerRight } = this.getStatusLayout();
+        const available = this.isMobile
+            ? centerRight - centerLeft
+            : this.width - 2 * BOSS_BAR_SIDE_CLEARANCE;
         const barW = Math.max(120, Math.min(520, available));
         const barX = this.isMobile
             ? centerLeft + (centerRight - centerLeft - barW) / 2
             : (this.width - barW) / 2;
-        const barY = this.isMobile ? 62 : 12;
-        const barH = 18;
+        const barY = this.isMobile ? 62 : statusY + 30;
+        const barH = 16;
         const ratio = Math.max(
             0,
             Math.min(1, boss.getStats().getCurrentHealth() / boss.getStats().getMaxHealth())
         );
+        // Name on its own row, health numbers centred inside the bar.
+        const nameY = barY;
+        const fillY = barY + 16;
 
         ctx.save();
         ctx.fillStyle = "rgba(8, 10, 16, 0.92)";
-        ctx.fillRect(barX - 8, barY - 5, barW + 16, 48);
+        ctx.fillRect(barX - 8, barY - 6, barW + 16, 44);
         ctx.strokeStyle = "rgba(255,255,255,0.2)";
-        ctx.strokeRect(barX - 8.5, barY - 5.5, barW + 17, 48);
+        ctx.strokeRect(barX - 8.5, barY - 6.5, barW + 17, 44);
 
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
         ctx.fillStyle = "#f2f4f8";
         ctx.font = "bold 11px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText(boss.name.toUpperCase(), this.width / 2, barY + 1);
+        ctx.fillText(boss.name.toUpperCase(), this.width / 2, nameY);
 
         ctx.fillStyle = "#32151d";
-        ctx.fillRect(barX, barY + 9, barW, barH);
+        ctx.fillRect(barX, fillY, barW, barH);
         ctx.fillStyle = "#d6485a";
-        ctx.fillRect(barX, barY + 9, barW * ratio, barH);
+        ctx.fillRect(barX, fillY, barW * ratio, barH);
         ctx.strokeStyle = "rgba(255,255,255,0.65)";
-        ctx.strokeRect(barX + 0.5, barY + 9.5, barW - 1, barH - 1);
+        ctx.strokeRect(barX + 0.5, fillY + 0.5, barW - 1, barH - 1);
 
+        ctx.textBaseline = "middle";
         ctx.fillStyle = "#f2f4f8";
         ctx.font = "10px monospace";
         ctx.fillText(
             `${Math.ceil(boss.getStats().getCurrentHealth())} / ${Math.ceil(boss.getStats().getMaxHealth())}`,
             this.width / 2,
-            barY + 22
+            fillY + barH / 2 + 1
         );
         ctx.restore();
     }

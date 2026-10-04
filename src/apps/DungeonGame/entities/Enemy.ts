@@ -3,7 +3,7 @@ import { Entity } from "./Entity";
 import { Animation } from "../sprites/Animation";
 import { Animator } from "../sprites/Animator";
 import { Sprite } from "../sprites/Sprite";
-import { CharacterSheets } from "../objects/utils/loadCharacter";
+import { CharacterSheets, DirectionalClip } from "../objects/utils/loadCharacter";
 import { Team } from "./Team";
 import { EntityAttributes } from "../attributes/EntityAttributes";
 import { EntityDelegator } from "../weapons/EntityDelegator";
@@ -12,8 +12,18 @@ import { Footsteps } from "../audio/Footsteps";
 const ENEMY_ANIMATION_SPEED = 0.1;
 const HURT_ANIMATION_SPEED = 0.08;
 const DEATH_ANIMATION_SPEED = 0.12;
+const ATTACK_ANIMATION_SPEED = 0.07;
 
 type Facing = "front" | "left" | "right" | "back";
+
+/**
+ * How frames are laid out on the enemy's sheets:
+ * - "grid": 4x4 walk/idle sheets (one row per facing), two-row hurt/death clips (right, then left).
+ * - "strip": every sheet is a single row shared by all facings (e.g. front-facing sprites).
+ */
+export type SheetLayout = "grid" | "strip";
+
+const range = (from: number, count: number) => Array.from({ length: count }, (_, i) => from + i);
 
 export abstract class Enemy extends Entity {
   vx = 0;
@@ -38,6 +48,7 @@ export abstract class Enemy extends Entity {
 
   private readonly hasHurtAnim: boolean;
   private readonly hasDeathAnim: boolean;
+  private readonly hasAttackAnim: boolean;
   private dying = false;
 
   protected constructor(
@@ -46,42 +57,32 @@ export abstract class Enemy extends Entity {
     sheets: CharacterSheets,
     team: Team,
     stats: EntityAttributes,
-    singleFrame = false,
+    layout: SheetLayout = "grid",
   ) {
     const animator = new Animator();
-    const frames = singleFrame ? [0] : [0, 1, 2, 3];
-    const leftFrames = singleFrame ? [0] : [4, 5, 6, 7];
-    const rightFrames = singleFrame ? [0] : [8, 9, 10, 11];
-    const backFrames = singleFrame ? [0] : [12, 13, 14, 15];
-    animator.addAnimation(new Animation("idle_front", sheets.idle, frames, ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("idle_left", sheets.idle, leftFrames, ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("idle_right", sheets.idle, rightFrames, ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("idle_back", sheets.idle, backFrames, ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("walk_front", sheets.walk, frames, ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("walk_left", sheets.walk, leftFrames, ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("walk_right", sheets.walk, rightFrames, ENEMY_ANIMATION_SPEED, true));
-    animator.addAnimation(new Animation("walk_back", sheets.walk, backFrames, ENEMY_ANIMATION_SPEED, true));
+    const strip = layout === "strip";
+
+    for (const [kind, sheet] of [["idle", sheets.idle], ["walk", sheets.walk]] as const) {
+      const all = range(0, sheet.getTotalFrames());
+      animator.addAnimation(new Animation(`${kind}_front`, sheet, strip ? all : range(0, 4), ENEMY_ANIMATION_SPEED, true));
+      animator.addAnimation(new Animation(`${kind}_left`, sheet, strip ? all : range(4, 4), ENEMY_ANIMATION_SPEED, true));
+      animator.addAnimation(new Animation(`${kind}_right`, sheet, strip ? all : range(8, 4), ENEMY_ANIMATION_SPEED, true));
+      animator.addAnimation(new Animation(`${kind}_back`, sheet, strip ? all : range(12, 4), ENEMY_ANIMATION_SPEED, true));
+    }
     animator.play("idle_front");
 
-    let hasHurtAnim = false;
-    if (sheets.hurt) {
-      const { sheet, framesPerRow } = sheets.hurt;
-      const rightFrames = Array.from({ length: framesPerRow }, (_, i) => i);
-      const leftFrames = Array.from({ length: framesPerRow }, (_, i) => i + framesPerRow);
-      animator.addAnimation(new Animation("hurt_right", sheet, rightFrames, HURT_ANIMATION_SPEED, false));
-      animator.addAnimation(new Animation("hurt_left", sheet, leftFrames, HURT_ANIMATION_SPEED, false));
-      hasHurtAnim = true;
-    }
+    // Right-facing frames are row one; left-facing frames are row two, unless the sheet is a strip.
+    const addClip = (name: string, clip: DirectionalClip | undefined, speed: number): boolean => {
+      if (!clip) return false;
+      const { sheet, framesPerRow } = clip;
+      animator.addAnimation(new Animation(`${name}_right`, sheet, range(0, framesPerRow), speed, false));
+      animator.addAnimation(new Animation(`${name}_left`, sheet, range(strip ? 0 : framesPerRow, framesPerRow), speed, false));
+      return true;
+    };
 
-    let hasDeathAnim = false;
-    if (sheets.death) {
-      const { sheet, framesPerRow } = sheets.death;
-      const rightFrames = Array.from({ length: framesPerRow }, (_, i) => i);
-      const leftFrames = Array.from({ length: framesPerRow }, (_, i) => i + framesPerRow);
-      animator.addAnimation(new Animation("death_right", sheet, rightFrames, DEATH_ANIMATION_SPEED, false));
-      animator.addAnimation(new Animation("death_left", sheet, leftFrames, DEATH_ANIMATION_SPEED, false));
-      hasDeathAnim = true;
-    }
+    const hasHurtAnim = addClip("hurt", sheets.hurt, HURT_ANIMATION_SPEED);
+    const hasDeathAnim = addClip("death", sheets.death, DEATH_ANIMATION_SPEED);
+    const hasAttackAnim = addClip("attack", sheets.attack, ATTACK_ANIMATION_SPEED);
 
     const sprite = new Sprite("enemySprite", animator, transform, false);
     super(name, transform, stats, sprite, team);
@@ -90,6 +91,7 @@ export abstract class Enemy extends Entity {
     this.animator = animator;
     this.hasHurtAnim = hasHurtAnim;
     this.hasDeathAnim = hasDeathAnim;
+    this.hasAttackAnim = hasAttackAnim;
   }
 
   setTarget(entity: Entity): void {
@@ -109,6 +111,13 @@ export abstract class Enemy extends Entity {
       return;
     }
     this.animator.play(`hurt_${this.facing === "left" ? "left" : "right"}`);
+  }
+
+  playAttack(): void {
+    if (!this.hasAttackAnim || this.dying) {
+      return;
+    }
+    this.animator.play(`attack_${this.facing === "left" ? "left" : "right"}`);
   }
 
   playDeath(): void {
@@ -137,6 +146,11 @@ export abstract class Enemy extends Entity {
   update(deltaTime: number): void {
     if (!this.active) {
       return;
+    }
+
+    // Safety net for enemies whose onDeath hook was never wired up.
+    if (!this.dying && this.stats.isDestroyed()) {
+      this.playDeath();
     }
 
     if (this.dying) {
@@ -179,13 +193,13 @@ export abstract class Enemy extends Entity {
 
     this.behave(deltaTime, dist);
 
-    const currentName = this.animator.getCurrentName();
-    const hurtPlaying =
-      this.hasHurtAnim &&
-      (currentName === "hurt_left" || currentName === "hurt_right") &&
+    // One-shot clips (hurt, attack) play out before walk/idle takes over again.
+    const currentName = this.animator.getCurrentName() ?? "";
+    const oneShotPlaying =
+      (currentName.startsWith("hurt_") || currentName.startsWith("attack_")) &&
       !this.animator.isFinished();
 
-    if (!hurtPlaying) {
+    if (!oneShotPlaying) {
       this.animator.play(`${moving ? "walk" : "idle"}_${this.facing}`);
     }
 

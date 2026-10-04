@@ -94,6 +94,8 @@ export class MeleeEnemy extends Enemy {
     );
 
     weapon.setAttackSounds(pickAttackSound(voice));
+    // Hit for the level-scaled damage stat, not the sword's flat base damage.
+    weapon.setDamageOutput(stats.getDamage());
 
     enemy.weapon = weapon;
 
